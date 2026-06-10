@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const saleController = require('../controllers/sale.controller');
-const { authenticate, authorize } = require('../middlewares/auth');
 
-router.use(authenticate);
 
 router.get('/', saleController.findAll);
 router.get('/:id', saleController.findOne);

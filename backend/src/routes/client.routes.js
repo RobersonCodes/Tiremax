@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const clientController = require('../controllers/client.controller');
-const { authenticate } = require('../middlewares/auth');
 
-router.use(authenticate);
 
 router.get('/', clientController.findAll);
 router.get('/search', clientController.search);

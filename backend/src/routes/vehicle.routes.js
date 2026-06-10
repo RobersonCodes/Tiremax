@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const vehicleController = require('../controllers/vehicle.controller');
-const { authenticate } = require('../middlewares/auth');
 
-router.use(authenticate);
 
 router.get('/', vehicleController.findAll);
 router.get('/:id', vehicleController.findOne);

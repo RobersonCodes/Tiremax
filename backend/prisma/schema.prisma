@@ -7,10 +7,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── TENANT (Borracharia) ────────────────────────────────────────────────────
+model Tenant {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  cnpj         String?
+  phone        String?
+  whatsapp     String?
+  email        String?
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?  @map("zip_code")
+  logo         String?
+  primaryColor String   @default("#f5c800") @map("primary_color")
+  openHours    String?  @map("open_hours")
+  plan         String   @default("TRIAL")
+  status       String   @default("ACTIVE")
+  trialEndsAt  DateTime? @map("trial_ends_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  users              User[]
+  clients            Client[]
+  vehicles           Vehicle[]
+  categories         Category[]
+  products           Product[]
+  sales              Sale[]
+  services           Service[]
+  stockMovements     StockMovement[]
+  invoices           Invoice[]
+  payments           Payment[]
+  accountsReceivable AccountReceivable[]
+  accountsPayable    AccountPayable[]
+
+  @@map("tenants")
+}
+
+// ─── USER ────────────────────────────────────────────────────────────────────
 model User {
   id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
   name      String
-  email     String   @unique
+  email     String
   password  String
   role      String   @default("EMPLOYEE")
   avatar    String?
@@ -19,17 +59,21 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
   sales            Sale[]
   servicesCreated  Service[] @relation("CreatedBy")
   servicesAssigned Service[] @relation("AssignedTo")
 
+  @@unique([tenantId, email])
   @@map("users")
 }
 
+// ─── CLIENT ──────────────────────────────────────────────────────────────────
 model Client {
   id           String    @id @default(uuid())
+  tenantId     String    @map("tenant_id")
   name         String
-  document     String?   @unique
+  document     String?
   documentType String?   @map("document_type")
   email        String?
   phone        String?
@@ -44,18 +88,22 @@ model Client {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
   vehicles Vehicle[]
   sales    Sale[]
   services Service[]
   invoices Invoice[]
 
+  @@unique([tenantId, document])
   @@map("clients")
 }
 
+// ─── VEHICLE ─────────────────────────────────────────────────────────────────
 model Vehicle {
   id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
   clientId  String   @map("client_id")
-  plate     String   @unique
+  plate     String
   brand     String
   model     String
   year      Int
@@ -65,26 +113,33 @@ model Vehicle {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
   client   Client    @relation(fields: [clientId], references: [id])
   services Service[]
 
+  @@unique([tenantId, plate])
   @@map("vehicles")
 }
 
+// ─── CATEGORY ────────────────────────────────────────────────────────────────
 model Category {
   id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
   name        String
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
 
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
   products Product[]
 
   @@map("categories")
 }
 
+// ─── PRODUCT ─────────────────────────────────────────────────────────────────
 model Product {
   id          String   @id @default(uuid())
-  code        String   @unique
+  tenantId    String   @map("tenant_id")
+  code        String
   name        String
   description String?
   categoryId  String?  @map("category_id")
@@ -101,17 +156,21 @@ model Product {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
   category       Category?       @relation(fields: [categoryId], references: [id])
   saleItems      SaleItem[]
   serviceItems   ServiceItem[]
   stockMovements StockMovement[]
 
+  @@unique([tenantId, code])
   @@map("products")
 }
 
+// ─── SALE ─────────────────────────────────────────────────────────────────────
 model Sale {
   id            String   @id @default(uuid())
-  number        Int      @unique
+  tenantId      String   @map("tenant_id")
+  number        Int
   clientId      String?  @map("client_id")
   userId        String   @map("user_id")
   status        String   @default("PENDING")
@@ -123,15 +182,18 @@ model Sale {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  tenant   Tenant     @relation(fields: [tenantId], references: [id])
   client   Client?    @relation(fields: [clientId], references: [id])
   user     User       @relation(fields: [userId], references: [id])
   items    SaleItem[]
   invoice  Invoice?
   payments Payment[]
 
+  @@unique([tenantId, number])
   @@map("sales")
 }
 
+// ─── SALE ITEM ───────────────────────────────────────────────────────────────
 model SaleItem {
   id        String @id @default(uuid())
   saleId    String @map("sale_id")
@@ -147,9 +209,11 @@ model SaleItem {
   @@map("sale_items")
 }
 
+// ─── SERVICE ─────────────────────────────────────────────────────────────────
 model Service {
   id           String    @id @default(uuid())
-  number       Int       @unique
+  tenantId     String    @map("tenant_id")
+  number       Int
   clientId     String    @map("client_id")
   vehicleId    String?   @map("vehicle_id")
   createdById  String    @map("created_by_id")
@@ -167,6 +231,7 @@ model Service {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
+  tenant     Tenant        @relation(fields: [tenantId], references: [id])
   client     Client        @relation(fields: [clientId], references: [id])
   vehicle    Vehicle?      @relation(fields: [vehicleId], references: [id])
   createdBy  User          @relation("CreatedBy", fields: [createdById], references: [id])
@@ -174,9 +239,11 @@ model Service {
   items      ServiceItem[]
   invoice    Invoice?
 
+  @@unique([tenantId, number])
   @@map("services")
 }
 
+// ─── SERVICE ITEM ────────────────────────────────────────────────────────────
 model ServiceItem {
   id          String  @id @default(uuid())
   serviceId   String  @map("service_id")
@@ -192,8 +259,10 @@ model ServiceItem {
   @@map("service_items")
 }
 
+// ─── STOCK MOVEMENT ──────────────────────────────────────────────────────────
 model StockMovement {
   id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
   productId String   @map("product_id")
   type      String
   quantity  Int
@@ -203,14 +272,17 @@ model StockMovement {
   notes     String?
   createdAt DateTime @default(now()) @map("created_at")
 
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
   product Product @relation(fields: [productId], references: [id])
 
   @@map("stock_movements")
 }
 
+// ─── INVOICE ─────────────────────────────────────────────────────────────────
 model Invoice {
   id        String    @id @default(uuid())
-  number    String?   @unique
+  tenantId  String    @map("tenant_id")
+  number    String?
   saleId    String?   @unique @map("sale_id")
   serviceId String?   @unique @map("service_id")
   clientId  String    @map("client_id")
@@ -221,6 +293,7 @@ model Invoice {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
   sale    Sale?    @relation(fields: [saleId], references: [id])
   service Service? @relation(fields: [serviceId], references: [id])
   client  Client   @relation(fields: [clientId], references: [id])
@@ -228,21 +301,26 @@ model Invoice {
   @@map("invoices")
 }
 
+// ─── PAYMENT ─────────────────────────────────────────────────────────────────
 model Payment {
   id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
   saleId      String?  @map("sale_id")
   method      String
   amount      Float
   reference   String?
   processedAt DateTime @default(now()) @map("processed_at")
 
-  sale Sale? @relation(fields: [saleId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  sale   Sale?  @relation(fields: [saleId], references: [id])
 
   @@map("payments")
 }
 
+// ─── ACCOUNT RECEIVABLE ──────────────────────────────────────────────────────
 model AccountReceivable {
   id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
   description String
   clientId    String?   @map("client_id")
   amount      Float
@@ -255,11 +333,15 @@ model AccountReceivable {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
   @@map("accounts_receivable")
 }
 
+// ─── ACCOUNT PAYABLE ─────────────────────────────────────────────────────────
 model AccountPayable {
   id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
   description String
   supplier    String?
   amount      Float
@@ -271,6 +353,8 @@ model AccountPayable {
   notes       String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@map("accounts_payable")
 }

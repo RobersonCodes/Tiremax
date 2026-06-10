@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const invoiceController = require('../controllers/invoice.controller');
-const { authenticate, authorize } = require('../middlewares/auth');
 
-router.use(authenticate);
 
 router.get('/', invoiceController.findAll);
 router.get('/:id', invoiceController.findOne);

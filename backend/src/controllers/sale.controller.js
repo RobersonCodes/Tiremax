@@ -1,20 +1,24 @@
-const prisma = require('../config/database')
+const prisma = require('../config/database');
 
-const getNextNumber = async (model) => {
-  const last = await prisma[model].findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
-  return (last?.number || 0) + 1
-}
+const getNextNumber = async (tenantId) => {
+  const last = await prisma.sale.findFirst({
+    where: { tenantId },
+    orderBy: { number: 'desc' },
+    select: { number: true },
+  });
+  return (last?.number || 0) + 1;
+};
 
 const findAll = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, status, startDate, endDate } = req.query
-    const skip = (parseInt(page) - 1) * parseInt(limit)
-    const where = {}
-    if (status) where.status = status
+    const { page = 1, limit = 20, status, startDate, endDate } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const where = { tenantId: req.tenantId };
+    if (status) where.status = status;
     if (startDate || endDate) {
-      where.createdAt = {}
-      if (startDate) where.createdAt.gte = new Date(startDate)
-      if (endDate) where.createdAt.lte = new Date(endDate)
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
     }
     const [sales, total] = await Promise.all([
       prisma.sale.findMany({
@@ -27,101 +31,107 @@ const findAll = async (req, res, next) => {
         },
       }),
       prisma.sale.count({ where }),
-    ])
-    res.json({ data: sales, total, page: parseInt(page), limit: parseInt(limit) })
-  } catch (err) { next(err) }
-}
+    ]);
+    res.json({ data: sales, total, page: parseInt(page), limit: parseInt(limit) });
+  } catch (err) { next(err); }
+};
 
 const findOne = async (req, res, next) => {
   try {
-    const sale = await prisma.sale.findUnique({
-      where: { id: req.params.id },
+    const sale = await prisma.sale.findFirst({
+      where: { id: req.params.id, tenantId: req.tenantId },
       include: {
         client: true,
         user: { select: { id: true, name: true } },
-        items: { include: { product: { select: { id: true, name: true, code: true, unit: true } } } },
+        items: { include: { product: { select: { id: true, name: true, unit: true } } } },
         payments: true,
-        invoice: true,
       },
-    })
-    if (!sale) return res.status(404).json({ message: 'Venda não encontrada' })
-    res.json(sale)
-  } catch (err) { next(err) }
-}
+    });
+    if (!sale) return res.status(404).json({ message: 'Venda não encontrada' });
+    res.json(sale);
+  } catch (err) { next(err); }
+};
 
 const create = async (req, res, next) => {
   try {
-    const { clientId, items, discount = 0, paymentMethod, notes } = req.body
-    if (!items || items.length === 0) return res.status(400).json({ message: 'A venda deve ter pelo menos um item' })
-
-    const productIds = items.map(i => i.productId)
-    const products = await prisma.product.findMany({ where: { id: { in: productIds }, active: true } })
-
-    let subtotal = 0
-    const enrichedItems = items.map(item => {
-      const product = products.find(p => p.id === item.productId)
-      if (!product) throw { statusCode: 400, message: `Produto não encontrado` }
-      if (product.stock < item.quantity) throw { statusCode: 400, message: `Estoque insuficiente para ${product.name}` }
-      const unitPrice = Number(product.salePrice)
-      const itemDiscount = Number(item.discount || 0)
-      const total = (unitPrice * item.quantity) - itemDiscount
-      subtotal += total
-      return { productId: item.productId, quantity: item.quantity, unitPrice, discount: itemDiscount, total }
-    })
-
-    const total = subtotal - Number(discount)
-    const number = await getNextNumber('sale')
+    const { clientId, items, discount = 0, paymentMethod, notes, payments } = req.body;
+    const number = await getNextNumber(req.tenantId);
 
     const sale = await prisma.$transaction(async (tx) => {
-      const newSale = await tx.sale.create({
+      const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+      const total = subtotal - discount;
+
+      const s = await tx.sale.create({
         data: {
+          tenantId: req.tenantId,
           number,
-          clientId: clientId || null,
+          clientId,
           userId: req.user.id,
           status: 'COMPLETED',
-          subtotal, discount: Number(discount), total,
-          paymentMethod, notes,
-          items: { create: enrichedItems },
-          payments: { create: [{ method: paymentMethod, amount: total }] },
+          subtotal,
+          discount,
+          total,
+          paymentMethod,
+          notes,
+          items: {
+            create: items.map(i => ({
+              productId: i.productId,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+              discount: i.discount || 0,
+              total: i.unitPrice * i.quantity - (i.discount || 0),
+            })),
+          },
         },
-        include: { items: { include: { product: true } }, client: true },
-      })
-      for (const item of enrichedItems) {
-        await tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } })
+        include: { items: true },
+      });
+
+      // Atualiza estoque
+      for (const item of items) {
+        await tx.product.updateMany({
+          where: { id: item.productId, tenantId: req.tenantId },
+          data: { stock: { decrement: item.quantity } },
+        });
         await tx.stockMovement.create({
-          data: { productId: item.productId, type: 'OUT', quantity: item.quantity, reason: 'SALE', reference: `VENDA #${number}` },
-        })
+          data: {
+            tenantId: req.tenantId,
+            productId: item.productId,
+            type: 'OUT',
+            quantity: item.quantity,
+            reason: 'SALE',
+            reference: `VENDA #${number}`,
+          },
+        });
       }
-      return newSale
-    })
 
-    res.status(201).json(sale)
-  } catch (err) { next(err) }
-}
+      // Registra pagamentos
+      if (payments?.length) {
+        await tx.payment.createMany({
+          data: payments.map(p => ({
+            tenantId: req.tenantId,
+            saleId: s.id,
+            method: p.method,
+            amount: p.amount,
+            reference: p.reference,
+          })),
+        });
+      }
 
-const updateStatus = async (req, res, next) => {
-  try {
-    const sale = await prisma.sale.update({ where: { id: req.params.id }, data: { status: req.body.status } })
-    res.json(sale)
-  } catch (err) { next(err) }
-}
+      return s;
+    });
+
+    res.status(201).json(sale);
+  } catch (err) { next(err); }
+};
 
 const cancel = async (req, res, next) => {
   try {
-    const sale = await prisma.$transaction(async (tx) => {
-      const existing = await tx.sale.findUnique({ where: { id: req.params.id }, include: { items: true } })
-      if (!existing) throw { statusCode: 404, message: 'Venda não encontrada' }
-      if (existing.status === 'CANCELLED') throw { statusCode: 400, message: 'Venda já cancelada' }
-      for (const item of existing.items) {
-        await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } })
-        await tx.stockMovement.create({
-          data: { productId: item.productId, type: 'IN', quantity: item.quantity, reason: 'SALE_CANCEL', reference: `CANCELAMENTO #${existing.number}` },
-        })
-      }
-      return tx.sale.update({ where: { id: req.params.id }, data: { status: 'CANCELLED' } })
-    })
-    res.json(sale)
-  } catch (err) { next(err) }
-}
+    await prisma.sale.updateMany({
+      where: { id: req.params.id, tenantId: req.tenantId },
+      data: { status: 'CANCELLED' },
+    });
+    res.json({ message: 'Venda cancelada' });
+  } catch (err) { next(err); }
+};
 
-module.exports = { findAll, findOne, create, updateStatus, cancel }
+module.exports = { findAll, findOne, create, cancel };

@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const financialController = require('../controllers/financial.controller');
-const { authenticate, authorize } = require('../middlewares/auth');
 
-router.use(authenticate);
 router.use(authorize('ADMIN', 'FINANCIAL'));
 
 router.get('/receivable', financialController.getReceivable);

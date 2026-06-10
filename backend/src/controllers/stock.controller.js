@@ -4,7 +4,7 @@ const getMovements = async (req, res, next) => {
   try {
     const { page = 1, limit = 30, productId, type } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const where = {};
+    const where = { tenantId: req.tenantId };
     if (productId) where.productId = productId;
     if (type) where.type = type;
 
@@ -16,9 +16,8 @@ const getMovements = async (req, res, next) => {
       }),
       prisma.stockMovement.count({ where }),
     ]);
-
     res.json({ data: movements, total, page: parseInt(page), limit: parseInt(limit) });
-  } catch (err) { next(err) }
+  } catch (err) { next(err); }
 };
 
 const createMovement = async (req, res, next) => {
@@ -26,46 +25,22 @@ const createMovement = async (req, res, next) => {
     const { productId, type, quantity, reason, reference, unitCost, notes } = req.body;
 
     const movement = await prisma.$transaction(async (tx) => {
+      // Verifica se produto pertence ao tenant
+      const product = await tx.product.findFirst({ where: { id: productId, tenantId: req.tenantId } });
+      if (!product) throw new Error('Produto não encontrado');
+
       const mov = await tx.stockMovement.create({
-        data: { productId, type, quantity: Number(quantity), reason, reference, unitCost, notes },
+        data: { tenantId: req.tenantId, productId, type, quantity: Number(quantity), reason, reference, unitCost, notes },
       });
 
-      if (type === 'IN') {
-        await tx.product.update({ where: { id: productId }, data: { stock: { increment: Number(quantity) } } });
-      } else if (type === 'OUT') {
-        await tx.product.update({ where: { id: productId }, data: { stock: { decrement: Number(quantity) } } });
-      } else if (type === 'ADJUSTMENT') {
-        await tx.product.update({ where: { id: productId }, data: { stock: Number(quantity) } });
-      }
+      const increment = type === 'IN' ? Number(quantity) : -Number(quantity);
+      await tx.product.update({ where: { id: productId }, data: { stock: { increment } } });
 
       return mov;
     });
 
     res.status(201).json(movement);
-  } catch (err) { next(err) }
+  } catch (err) { next(err); }
 };
 
-const getReport = async (req, res, next) => {
-  try {
-    const products = await prisma.product.findMany({
-      where: { active: true },
-      orderBy: { name: 'asc' },
-      include: { category: { select: { name: true } } },
-    });
-
-    const enriched = products.map(p => ({
-      ...p,
-      totalValue: p.stock * p.costPrice,
-      categoryName: p.category?.name || null,
-    }));
-
-    const totals = {
-      _sum: { stock: enriched.reduce((a, p) => a + p.stock, 0) },
-      _count: enriched.length,
-    };
-
-    res.json({ products: enriched, totals });
-  } catch (err) { next(err) }
-};
-
-module.exports = { getMovements, createMovement, getReport };
+module.exports = { getMovements, createMovement };
