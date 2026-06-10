@@ -2,16 +2,14 @@
   "name": "tiremax-erp-backend",
   "version": "1.0.0",
   "description": "TireMax ERP - Backend API",
-  "main": "src/server.js",
+  "main": "start.js",
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node start.js",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
     "db:seed": "node prisma/seed.js",
-    "db:studio": "npx prisma studio",
-    "build": "npx prisma generate",
-    "postinstall": "npx prisma generate"
+    "build": "npx prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
