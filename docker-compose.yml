@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tiremax-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: tiremax_root
+      MYSQL_DATABASE: tiremax_erp
+      MYSQL_USER: tiremax
+      MYSQL_PASSWORD: tiremax_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tiremax-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tiremax-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql://tiremax:tiremax_pass@mysql:3306/tiremax_erp
+      JWT_SECRET: your-super-secret-key-change-me
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      NODE_ENV: production
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - tiremax-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tiremax-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - tiremax-net
+
+volumes:
+  mysql_data:
+
+networks:
+  tiremax-net:
+    driver: bridge

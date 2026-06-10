@@ -1,0 +1,50 @@
+<!--
+  android-res/AndroidManifest_permissions.xml
+  =============================================
+  INSTRUÇÕES: Após rodar "npx cap add android", abra:
+  android/app/src/main/AndroidManifest.xml
+
+  Adicione as permissões abaixo DENTRO de <manifest> (antes de <application>):
+-->
+
+<!-- Rede -->
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+<!-- Câmera -->
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-feature android:name="android.hardware.camera" android:required="false" />
+<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+<!-- Armazenamento (necessário para salvar fotos no Android < 10) -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="29" />
+
+<!-- Notificações (Android 13+) -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+<uses-permission android:name="android.permission.VIBRATE" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+
+<!-- Push Notifications (Firebase) -->
+<!-- Descomente após configurar Firebase -->
+<!-- <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" /> -->
+
+<!--
+  Adicione dentro de <application>:
+  android:networkSecurityConfig="@xml/network_security_config"
+  android:usesCleartextTraffic="false"
+
+  Exemplo completo:
+  <application
+      android:allowBackup="true"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher_round"
+      android:label="@string/app_name"
+      android:theme="@style/AppTheme"
+      android:networkSecurityConfig="@xml/network_security_config"
+      android:usesCleartextTraffic="false">
+-->

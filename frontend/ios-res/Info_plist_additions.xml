@@ -1,0 +1,64 @@
+<!--
+  ios-res/Info_plist_additions.xml
+  ==================================
+  INSTRUÇÕES: Após rodar "npx cap add ios", abra:
+  ios/App/App/Info.plist
+
+  Adicione as chaves abaixo dentro do <dict> principal.
+  Estas strings aparecem quando o app pede permissão ao usuário.
+-->
+
+<!-- Câmera -->
+<key>NSCameraUsageDescription</key>
+<string>O TireMax ERP usa a câmera para fotografar produtos e veículos dos clientes.</string>
+
+<!-- Galeria de fotos -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>O TireMax ERP acessa a galeria para selecionar fotos de produtos e veículos.</string>
+
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>O TireMax ERP salva fotos de produtos e ordens de serviço na sua galeria.</string>
+
+<!-- Notificações (configurado automaticamente pelo Capacitor Push Notifications) -->
+
+<!-- Face ID / Touch ID (se implementar biometria futuramente) -->
+<key>NSFaceIDUsageDescription</key>
+<string>O TireMax ERP usa o Face ID para autenticação rápida e segura.</string>
+
+<!-- Rede local (para descobrir servidor na mesma rede) -->
+<key>NSLocalNetworkUsageDescription</key>
+<string>O TireMax ERP se conecta ao servidor local da sua empresa.</string>
+<key>NSBonjourServices</key>
+<array>
+    <string>_http._tcp</string>
+</array>
+
+<!--
+  Configurações de tela:
+  Permite portrait e landscape (remova orientações indesejadas)
+-->
+<key>UISupportedInterfaceOrientations</key>
+<array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+</array>
+
+<key>UISupportedInterfaceOrientations~ipad</key>
+<array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+</array>
+
+<!-- Status bar dark para combinar com o tema do app -->
+<key>UIStatusBarStyle</key>
+<string>UIStatusBarStyleLightContent</string>
+
+<key>UIViewControllerBasedStatusBarAppearance</key>
+<true/>
+
+<!-- Viewport fit cover para safe area (notch do iPhone) -->
+<!-- Já configurado no index.html:
+     <meta name="viewport" content="viewport-fit=cover, ..."> -->

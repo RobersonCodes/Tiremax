@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("EMPLOYEE")
+  avatar    String?
+  phone     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sales            Sale[]
+  servicesCreated  Service[] @relation("CreatedBy")
+  servicesAssigned Service[] @relation("AssignedTo")
+
+  @@map("users")
+}
+
+model Client {
+  id           String    @id @default(uuid())
+  name         String
+  document     String?   @unique
+  documentType String?   @map("document_type")
+  email        String?
+  phone        String?
+  whatsapp     String?
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?   @map("zip_code")
+  birthDate    DateTime? @map("birth_date")
+  notes        String?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  vehicles Vehicle[]
+  sales    Sale[]
+  services Service[]
+  invoices Invoice[]
+
+  @@map("clients")
+}
+
+model Vehicle {
+  id        String   @id @default(uuid())
+  clientId  String   @map("client_id")
+  plate     String   @unique
+  brand     String
+  model     String
+  year      Int
+  color     String?
+  fuelType  String?  @map("fuel_type")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client   Client    @relation(fields: [clientId], references: [id])
+  services Service[]
+
+  @@map("vehicles")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  categoryId  String?  @map("category_id")
+  brand       String?
+  unit        String   @default("UN")
+  costPrice   Float    @map("cost_price")
+  salePrice   Float    @map("sale_price")
+  stock       Int      @default(0)
+  minStock    Int      @default(5) @map("min_stock")
+  maxStock    Int?     @map("max_stock")
+  location    String?
+  barcode     String?
+  ncm         String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  saleItems      SaleItem[]
+  serviceItems   ServiceItem[]
+  stockMovements StockMovement[]
+
+  @@map("products")
+}
+
+model Sale {
+  id            String   @id @default(uuid())
+  number        Int      @unique
+  clientId      String?  @map("client_id")
+  userId        String   @map("user_id")
+  status        String   @default("PENDING")
+  subtotal      Float
+  discount      Float    @default(0)
+  total         Float
+  paymentMethod String   @map("payment_method")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  client   Client?    @relation(fields: [clientId], references: [id])
+  user     User       @relation(fields: [userId], references: [id])
+  items    SaleItem[]
+  invoice  Invoice?
+  payments Payment[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String @id @default(uuid())
+  saleId    String @map("sale_id")
+  productId String @map("product_id")
+  quantity  Int
+  unitPrice Float  @map("unit_price")
+  discount  Float  @default(0)
+  total     Float
+
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+model Service {
+  id           String    @id @default(uuid())
+  number       Int       @unique
+  clientId     String    @map("client_id")
+  vehicleId    String?   @map("vehicle_id")
+  createdById  String    @map("created_by_id")
+  assignedToId String?   @map("assigned_to_id")
+  status       String    @default("OPEN")
+  type         String
+  description  String?
+  diagnosis    String?
+  laborCost    Float     @default(0) @map("labor_cost")
+  partsCost    Float     @default(0) @map("parts_cost")
+  total        Float
+  estimatedAt  DateTime? @map("estimated_at")
+  completedAt  DateTime? @map("completed_at")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  client     Client        @relation(fields: [clientId], references: [id])
+  vehicle    Vehicle?      @relation(fields: [vehicleId], references: [id])
+  createdBy  User          @relation("CreatedBy", fields: [createdById], references: [id])
+  assignedTo User?         @relation("AssignedTo", fields: [assignedToId], references: [id])
+  items      ServiceItem[]
+  invoice    Invoice?
+
+  @@map("services")
+}
+
+model ServiceItem {
+  id          String  @id @default(uuid())
+  serviceId   String  @map("service_id")
+  productId   String? @map("product_id")
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Float   @map("unit_price")
+  total       Float
+
+  service Service  @relation(fields: [serviceId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("service_items")
+}
+
+model StockMovement {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  type      String
+  quantity  Int
+  reason    String
+  reference String?
+  unitCost  Float?   @map("unit_cost")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("stock_movements")
+}
+
+model Invoice {
+  id        String    @id @default(uuid())
+  number    String?   @unique
+  saleId    String?   @unique @map("sale_id")
+  serviceId String?   @unique @map("service_id")
+  clientId  String    @map("client_id")
+  status    String    @default("DRAFT")
+  amount    Float
+  issueDate DateTime? @map("issue_date")
+  dueDate   DateTime? @map("due_date")
+  xmlPath   String?   @map("xml_path")
+  pdfPath   String?   @map("pdf_path")
+  errorMsg  String?   @map("error_msg")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  sale    Sale?    @relation(fields: [saleId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
+  client  Client   @relation(fields: [clientId], references: [id])
+
+  @@map("invoices")
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  saleId      String?  @map("sale_id")
+  method      String
+  amount      Float
+  reference   String?
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  sale Sale? @relation(fields: [saleId], references: [id])
+
+  @@map("payments")
+}
+
+model AccountReceivable {
+  id          String    @id @default(uuid())
+  description String
+  clientId    String?   @map("client_id")
+  amount      Float
+  dueDate     DateTime  @map("due_date")
+  paidAt      DateTime? @map("paid_at")
+  paidAmount  Float?    @map("paid_amount")
+  status      String    @default("PENDING")
+  reference   String?
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("accounts_receivable")
+}
+
+model AccountPayable {
+  id          String    @id @default(uuid())
+  description String
+  supplier    String?
+  amount      Float
+  dueDate     DateTime  @map("due_date")
+  paidAt      DateTime? @map("paid_at")
+  paidAmount  Float?    @map("paid_amount")
+  status      String    @default("PENDING")
+  category    String?
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("accounts_payable")
+}
