@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -97,7 +97,6 @@ model Product {
   maxStock    Int?     @map("max_stock")
   location    String?
   barcode     String?
-  ncm         String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -219,9 +218,6 @@ model Invoice {
   amount    Float
   issueDate DateTime? @map("issue_date")
   dueDate   DateTime? @map("due_date")
-  xmlPath   String?   @map("xml_path")
-  pdfPath   String?   @map("pdf_path")
-  errorMsg  String?   @map("error_msg")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 

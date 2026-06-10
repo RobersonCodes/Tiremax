@@ -1,6 +1,6 @@
 node_modules/
 .env
+*.db
 uploads/*
 !uploads/.gitkeep
-prisma/migrations/
 dist/
