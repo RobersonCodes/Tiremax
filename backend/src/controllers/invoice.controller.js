@@ -33,4 +33,13 @@ const issue = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { findAll, findOne, issue };
+
+
+const cancel = async (req, res, next) => {
+  try {
+    const invoice = await prisma.invoice.findFirst({ where: { id: req.params.id, tenantId: req.tenantId } });
+    if (!invoice) return res.status(404).json({ message: 'Nota não encontrada' });
+    res.json(await prisma.invoice.update({ where: { id: req.params.id }, data: { status: 'CANCELLED' } }));
+  } catch (err) { next(err); }
+};
+module.exports = { findAll, findOne, issue, cancel };

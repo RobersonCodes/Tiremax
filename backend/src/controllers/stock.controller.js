@@ -43,4 +43,18 @@ const createMovement = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getMovements, createMovement };
+
+
+const getReport = async (req, res, next) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { tenantId: req.tenantId, active: true },
+      orderBy: { name: 'asc' },
+      include: { category: { select: { name: true } } },
+    });
+    const totalValue = products.reduce((s, p) => s + p.stock * p.costPrice, 0);
+    const lowStock = products.filter(p => p.stock <= p.minStock);
+    res.json({ products, totalValue, lowStockCount: lowStock.length, totalProducts: products.length });
+  } catch (err) { next(err); }
+};
+module.exports = { getMovements, createMovement, getReport };

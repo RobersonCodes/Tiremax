@@ -73,7 +73,7 @@ const remove = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-const getLowStock = async (req, res, next) => {
+const lowStock = async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
       where: { tenantId: req.tenantId, active: true, stock: { lte: prisma.product.fields.minStock } },
@@ -83,4 +83,4 @@ const getLowStock = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { findAll, search, findOne, create, update, remove, getLowStock };
+module.exports = { findAll, search, findOne, create, update, remove, lowStock };

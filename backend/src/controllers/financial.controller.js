@@ -92,4 +92,28 @@ const getSummary = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getReceivable, createReceivable, payReceivable, deleteReceivable, getPayable, createPayable, payPayable, deletePayable, getSummary };
+
+
+const getCashflow = async (req, res, next) => {
+  try {
+    const { months = 6 } = req.query;
+    const result = [];
+    for (let i = parseInt(months) - 1; i >= 0; i--) {
+      const d = new Date();
+      const firstDay = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      const lastDay = new Date(d.getFullYear(), d.getMonth() - i + 1, 0);
+      const [income, expense] = await Promise.all([
+        prisma.sale.aggregate({ where: { tenantId: req.tenantId, status: 'COMPLETED', createdAt: { gte: firstDay, lte: lastDay } }, _sum: { total: true } }),
+        prisma.accountPayable.aggregate({ where: { tenantId: req.tenantId, status: 'PAID', paidAt: { gte: firstDay, lte: lastDay } }, _sum: { paidAmount: true } }),
+      ]);
+      result.push({
+        month: firstDay.toISOString().slice(0, 7),
+        income: income._sum.total || 0,
+        expense: expense._sum.paidAmount || 0,
+      });
+    }
+    res.json(result);
+  } catch (err) { next(err); }
+};
+
+module.exports = { getReceivable, createReceivable, payReceivable, deleteReceivable, getPayable, createPayable, payPayable, deletePayable, getSummary, getCashflow };

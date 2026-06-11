@@ -97,4 +97,12 @@ const updateStatus = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { findAll, findOne, create, update, updateStatus };
+
+
+const remove = async (req, res, next) => {
+  try {
+    await prisma.service.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { status: 'CANCELLED' } });
+    res.json({ message: 'Ordem cancelada' });
+  } catch (err) { next(err); }
+};
+module.exports = { findAll, findOne, create, update, updateStatus, remove };

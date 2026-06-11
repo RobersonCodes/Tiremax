@@ -134,4 +134,13 @@ const cancel = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { findAll, findOne, create, cancel };
+
+
+const updateStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    await prisma.sale.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { status } });
+    res.json({ message: 'Status atualizado' });
+  } catch (err) { next(err); }
+};
+module.exports = { findAll, findOne, create, updateStatus, cancel };
