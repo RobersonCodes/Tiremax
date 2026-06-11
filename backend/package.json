@@ -21,8 +21,8 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "prisma": "^5.10.0",
-    "resend": "^6.12.4",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "resend": "latest"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
