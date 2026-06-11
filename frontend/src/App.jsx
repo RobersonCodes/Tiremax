@@ -5,6 +5,7 @@ import { PrivateRoute } from './components/PrivateRoute'
 import AppLayout from './layouts/AppLayout'
 
 import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ClientsPage from './pages/clients/ClientsPage'
 import ClientDetailPage from './pages/clients/ClientDetailPage'
@@ -19,6 +20,7 @@ import NewServicePage from './pages/services/NewServicePage'
 import FinancialPage from './pages/financial/FinancialPage'
 import ReportsPage from './pages/reports/ReportsPage'
 import SettingsPage from './pages/settings/SettingsPage'
+import SuperAdminPage from './pages/admin/SuperAdminPage'
 
 export default function App() {
   return (
@@ -27,9 +29,11 @@ export default function App() {
         <SettingsProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="admin" element={<SuperAdminPage />} />
               <Route path="clients" element={<ClientsPage />} />
               <Route path="clients/:id" element={<ClientDetailPage />} />
               <Route path="inventory" element={<InventoryPage />} />

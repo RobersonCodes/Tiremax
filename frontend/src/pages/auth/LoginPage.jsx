@@ -115,7 +115,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-white/15 mt-5">TireMax ERP · {new Date().getFullYear()}</p>
+        <p className="text-center text-xs text-white/40 mt-4">Não tem conta? <a href="/register" className="text-yellow-400 hover:underline">Criar conta grátis</a></p>
+        <p className="text-center text-xs text-white/15 mt-2">TireMax ERP · {new Date().getFullYear()}</p>
       </motion.div>
     </div>
   )

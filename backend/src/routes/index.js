@@ -20,6 +20,7 @@ const settingsRoutes = require('./settings.routes');
 // Rotas públicas
 router.use('/auth', authRoutes);
 router.use('/tenants', tenantRoutes);
+router.use('/register', require('./register.routes'));
 
 // Middleware global: autenticação + tenant em todas as rotas protegidas
 router.use(authenticate);

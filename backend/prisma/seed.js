@@ -86,3 +86,35 @@ async function main() {
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
+
+// Super Admin (você mesmo — para acessar /admin)
+async function createSuperAdmin() {
+  const existing = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+  if (existing) { console.log('✅ Super Admin já existe'); return; }
+
+  // Cria um tenant especial para o super admin
+  const superTenant = await prisma.tenant.upsert({
+    where: { slug: 'super-admin' },
+    update: {},
+    create: {
+      name: 'Oliveira Systems',
+      slug: 'super-admin',
+      plan: 'ENTERPRISE',
+      status: 'ACTIVE',
+    },
+  });
+
+  const superPass = await bcrypt.hash('Tiremax@2024!', 10);
+  await prisma.user.create({
+    data: {
+      tenantId: superTenant.id,
+      name: 'Roberson Oliveira',
+      email: 'roberson@oliveirasystems.dev',
+      password: superPass,
+      role: 'SUPER_ADMIN',
+    },
+  });
+  console.log('✅ Super Admin criado: roberson@oliveirasystems.dev / Tiremax@2024!');
+}
+
+createSuperAdmin().catch(console.error).finally(() => {});
