@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Wrench, Car, User, Clock, CheckCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import api from '../../services/api'
-import { StatusBadge, Skeleton } from '../../components/ui/index'
-import { formatCurrency, formatDate, formatDateTime } from '../../utils/format'
+import { StatusBadge, Skeleton, Card, Button } from '../../components/ui/index'
+import { formatCurrency, formatDateTime } from '../../utils/format'
 import toast from 'react-hot-toast'
 
 const STATUS_TRANSITIONS = {
@@ -54,14 +54,14 @@ export default function ServiceDetailPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="btn-ghost flex items-center gap-2 text-sm"><ArrowLeft size={16} /> Voltar</button>
+        <Button variant="ghost" icon={ArrowLeft} onClick={() => navigate(-1)}>Voltar</Button>
         <div className="flex gap-2">
           {transitions.map(s => (
             <button key={s} onClick={() => updateStatus(s)} disabled={updating}
-              className={`text-sm flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium transition-all disabled:opacity-40 ${
+              className={`text-sm flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all duration-200 ease-out-expo disabled:opacity-40 ${
                 s === 'COMPLETED' ? 'bg-accent-green/10 text-accent-green border border-accent-green/20 hover:bg-accent-green/20' :
                 s === 'CANCELLED' ? 'bg-accent-red/10 text-accent-red border border-accent-red/20 hover:bg-accent-red/20' :
-                'btn-secondary'
+                'btn-dark'
               }`}>
               {s === 'COMPLETED' && <CheckCircle size={14} />}
               {STATUS_LABELS[s] || s}
@@ -73,7 +73,7 @@ export default function ServiceDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           {/* Header */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card p-5">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-xs text-brand-400 font-mono font-medium mb-1">OS #{service.number}</p>
@@ -88,7 +88,7 @@ export default function ServiceDetailPage() {
                 <User size={15} className="text-white/30 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs text-white/35">Cliente</p>
-                  <Link to={`/clients/${service.client?.id}`} className="text-sm text-brand-300 hover:underline">
+                  <Link to={`/clients/${service.client?.id}`} className="text-sm text-brand-500 hover:underline">
                     {service.client?.name}
                   </Link>
                   <p className="text-xs text-white/30">{service.client?.phone}</p>
@@ -134,7 +134,7 @@ export default function ServiceDetailPage() {
 
           {/* Items */}
           {service.items?.length > 0 && (
-            <div className="glass-card overflow-hidden">
+            <div className="card overflow-hidden">
               <div className="p-4 border-b border-white/[0.05]">
                 <h2 className="font-display font-semibold text-white">Peças e Materiais</h2>
               </div>
@@ -164,7 +164,7 @@ export default function ServiceDetailPage() {
 
         {/* Summary */}
         <div className="space-y-4">
-          <div className="glass-card p-5">
+          <Card>
             <h2 className="font-display font-semibold text-white mb-4">Resumo Financeiro</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-white/60">
@@ -178,9 +178,9 @@ export default function ServiceDetailPage() {
                 <span className="text-accent-green">{formatCurrency(service.total)}</span>
               </div>
             </div>
-          </div>
+          </Card>
           {service.notes && (
-            <div className="glass-card p-4">
+            <div className="card p-4">
               <p className="text-xs text-white/35 mb-1">Observações</p>
               <p className="text-sm text-white/70">{service.notes}</p>
             </div>

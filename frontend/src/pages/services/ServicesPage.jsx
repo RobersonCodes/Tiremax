@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Wrench, ChevronRight, Car } from 'lucide-react'
+import { Plus, Wrench, Car } from 'lucide-react'
 import api from '../../services/api'
-import { PageHeader, StatusBadge, Pagination, Skeleton, EmptyState } from '../../components/ui/index'
+import { PageHeader, StatusBadge, Pagination, Skeleton, EmptyState, Button } from '../../components/ui/index'
 import { formatCurrency, formatDate } from '../../utils/format'
 
 const STATUS_FILTERS = [
   { value: '', label: 'Todas' },
-  { value: 'OPEN', label: '🔵 Abertas' },
-  { value: 'IN_PROGRESS', label: '🟡 Em Andamento' },
-  { value: 'WAITING_PARTS', label: '🟠 Aguardando' },
-  { value: 'COMPLETED', label: '🟢 Concluídas' },
-  { value: 'CANCELLED', label: '🔴 Canceladas' },
+  { value: 'OPEN', label: 'Abertas' },
+  { value: 'IN_PROGRESS', label: 'Em Andamento' },
+  { value: 'WAITING_PARTS', label: 'Aguardando' },
+  { value: 'COMPLETED', label: 'Concluídas' },
+  { value: 'CANCELLED', label: 'Canceladas' },
 ]
 
 export default function ServicesPage() {
@@ -38,9 +38,9 @@ export default function ServicesPage() {
   useEffect(() => { load() }, [load])
 
   const statusColor = (s) => ({
-    OPEN: 'border-l-brand-500',
-    IN_PROGRESS: 'border-l-accent-amber',
-    WAITING_PARTS: 'border-l-accent-purple',
+    OPEN: 'border-l-accent-blue',
+    IN_PROGRESS: 'border-l-brand-500',
+    WAITING_PARTS: 'border-l-accent-orange',
     COMPLETED: 'border-l-accent-green',
     CANCELLED: 'border-l-accent-red',
   }[s] || 'border-l-white/10')
@@ -51,22 +51,25 @@ export default function ServicesPage() {
         title="Ordens de Serviço"
         subtitle={`${total} ordens registradas`}
         actions={
-          <Link to="/services/new" className="btn-primary flex items-center gap-2 text-sm">
-            <Plus size={16} /> Nova OS
+          <Link to="/services/new">
+            <Button icon={Plus}>Nova OS</Button>
           </Link>
         }
       />
 
       {/* Status filters */}
-      <div className="glass-card p-4">
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map(f => (
-            <button key={f.value} onClick={() => { setStatusFilter(f.value); setPage(1) }}
-              className={`px-3 py-1.5 rounded-xl text-sm transition-all ${statusFilter === f.value ? 'bg-brand-600 text-white font-medium' : 'bg-surface-600/50 text-white/40 hover:text-white/70'}`}>
-              {f.label}
-            </button>
-          ))}
-        </div>
+      <div className="card p-4 flex flex-wrap gap-2">
+        {STATUS_FILTERS.map(f => (
+          <button
+            key={f.value}
+            onClick={() => { setStatusFilter(f.value); setPage(1) }}
+            className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out-expo ${
+              statusFilter === f.value ? 'bg-brand-500 text-[#08090a] font-semibold' : 'bg-surface-700 text-white/40 hover:text-white/70'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {/* Services grid */}
@@ -75,15 +78,15 @@ export default function ServicesPage() {
           {Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-36 rounded-2xl" />)}
         </div>
       ) : services.length === 0 ? (
-        <div className="glass-card py-16">
+        <div className="card py-16">
           <EmptyState icon={Wrench} title="Nenhuma ordem encontrada" description="Crie ordens de serviço para seus clientes"
-            action={<Link to="/services/new" className="btn-primary text-sm flex items-center gap-2 mx-auto"><Plus size={14} /> Nova OS</Link>} />
+            action={<Link to="/services/new"><Button size="sm" icon={Plus}>Nova OS</Button></Link>} />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {services.map((s, i) => (
             <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-              className={`glass-card-hover p-4 border-l-2 cursor-pointer ${statusColor(s.status)}`}
+              className={`card-hover p-4 border-l-2 ${statusColor(s.status)}`}
               onClick={() => navigate(`/services/${s.id}`)}>
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -94,7 +97,6 @@ export default function ServicesPage() {
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-xs text-white/50">
-                  <span className="text-white/30">👤</span>
                   <span className="truncate">{s.client?.name}</span>
                 </div>
                 {s.vehicle && (
@@ -119,7 +121,7 @@ export default function ServicesPage() {
         </div>
       )}
       {!loading && total > limit && (
-        <div className="glass-card p-4">
+        <div className="card p-4">
           <Pagination page={page} total={total} limit={limit} onPage={setPage} />
         </div>
       )}

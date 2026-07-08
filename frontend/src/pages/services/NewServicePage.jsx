@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, Trash2, Search, CheckCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowLeft, Plus, Trash2, Search, CheckCircle, X } from 'lucide-react'
 import api from '../../services/api'
+import { Button, Input, FormGroup, Card } from '../../components/ui/index'
 import { formatCurrency } from '../../utils/format'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -113,7 +114,7 @@ export default function NewServicePage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="btn-ghost p-2"><ArrowLeft size={18} /></button>
+        <Button variant="ghost" size="md" onClick={() => navigate(-1)} className="!px-2"><ArrowLeft size={18} /></Button>
         <div>
           <h1 className="text-xl font-display font-bold text-white">Nova Ordem de Serviço</h1>
           <p className="text-xs text-white/35">Preencha os dados da OS</p>
@@ -124,103 +125,104 @@ export default function NewServicePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-4">
             {/* Client */}
-            <div className="glass-card p-5">
+            <Card>
               <h2 className="font-display font-semibold text-white mb-4">Cliente *</h2>
               {selectedClient ? (
-                <div className="flex items-center justify-between p-3 bg-brand-600/10 border border-brand-500/20 rounded-xl">
+                <div className="flex items-center justify-between p-3 bg-brand-500/10 border border-brand-500/15 rounded-xl">
                   <div>
                     <p className="font-medium text-white">{selectedClient.name}</p>
                     <p className="text-xs text-white/40">{selectedClient.phone}</p>
                   </div>
-                  <button type="button" onClick={() => { setSelectedClient(null); setVehicles([]) }} className="text-white/30 hover:text-white/60">✕</button>
+                  <button type="button" onClick={() => { setSelectedClient(null); setVehicles([]) }} className="text-white/30 hover:text-white/60">
+                    <X size={16} />
+                  </button>
                 </div>
               ) : (
                 <div className="relative">
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                  <input value={clientSearch} onChange={e => setClientSearch(e.target.value)}
-                    className="input-field pl-9" placeholder="Buscar cliente..." />
-                  {clientResults.length > 0 && (
-                    <div className="absolute top-full mt-1 w-full bg-surface-600 border border-white/10 rounded-xl overflow-hidden z-20">
-                      {clientResults.map(c => (
-                        <button key={c.id} type="button" onClick={() => selectClient(c)}
-                          className="w-full text-left px-3 py-2.5 hover:bg-white/5 border-b border-white/[0.05] last:border-0 transition-colors">
-                          <p className="text-sm text-white">{c.name}</p>
-                          <p className="text-xs text-white/35">{c.phone}</p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <Input icon={Search} value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Buscar cliente..." />
+                  <AnimatePresence>
+                    {clientResults.length > 0 && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="absolute top-full mt-1 w-full bg-surface-700 border border-white/10 rounded-xl overflow-hidden z-20">
+                        {clientResults.map(c => (
+                          <button key={c.id} type="button" onClick={() => selectClient(c)}
+                            className="w-full text-left px-3 py-2.5 hover:bg-white/5 border-b border-white/[0.05] last:border-0 transition-colors">
+                            <p className="text-sm text-white">{c.name}</p>
+                            <p className="text-xs text-white/35">{c.phone}</p>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
               {vehicles.length > 0 && (
                 <div className="mt-3">
-                  <label className="label">Veículo</label>
-                  <select value={form.vehicleId} onChange={set('vehicleId')} className="input-field">
-                    <option value="">Selecionar veículo...</option>
-                    {vehicles.map(v => (
-                      <option key={v.id} value={v.id}>{v.brand} {v.model} {v.year} · {v.plate}</option>
-                    ))}
-                  </select>
+                  <FormGroup label="Veículo">
+                    <select value={form.vehicleId} onChange={set('vehicleId')} className="input-field">
+                      <option value="">Selecionar veículo...</option>
+                      {vehicles.map(v => (
+                        <option key={v.id} value={v.id}>{v.brand} {v.model} {v.year} · {v.plate}</option>
+                      ))}
+                    </select>
+                  </FormGroup>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Service info */}
-            <div className="glass-card p-5">
+            <Card>
               <h2 className="font-display font-semibold text-white mb-4">Serviço</h2>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Tipo *</label>
+                <FormGroup label="Tipo" required>
                   <select value={form.type} onChange={set('type')} className="input-field">
                     {SERVICE_TYPES.map(t => <option key={t}>{t}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className="label">Responsável</label>
+                </FormGroup>
+                <FormGroup label="Responsável">
                   <select value={form.assignedToId} onChange={set('assignedToId')} className="input-field">
                     <option value="">Não atribuído</option>
                     {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
-                </div>
+                </FormGroup>
                 <div className="col-span-2">
-                  <label className="label">Descrição / Sintoma</label>
-                  <textarea value={form.description} onChange={set('description')} className="input-field h-20 resize-none" placeholder="Descreva o problema relatado pelo cliente..." />
+                  <FormGroup label="Descrição / Sintoma">
+                    <textarea value={form.description} onChange={set('description')} className="input-field h-20 resize-none" placeholder="Descreva o problema relatado pelo cliente..." />
+                  </FormGroup>
                 </div>
-                <div>
-                  <label className="label">Custo de Mão de Obra (R$)</label>
-                  <input type="number" step="0.01" min={0} value={form.laborCost} onChange={set('laborCost')} className="input-field" placeholder="0,00" />
-                </div>
-                <div>
-                  <label className="label">Observações</label>
-                  <input value={form.notes} onChange={set('notes')} className="input-field" placeholder="Notas internas..." />
-                </div>
+                <FormGroup label="Custo de Mão de Obra (R$)">
+                  <Input type="number" step="0.01" min={0} value={form.laborCost} onChange={set('laborCost')} placeholder="0,00" />
+                </FormGroup>
+                <FormGroup label="Observações">
+                  <Input value={form.notes} onChange={set('notes')} placeholder="Notas internas..." />
+                </FormGroup>
               </div>
-            </div>
+            </Card>
 
             {/* Parts / Items */}
-            <div className="glass-card p-5">
+            <Card>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display font-semibold text-white">Peças e Materiais</h2>
-                <button type="button" onClick={addManualItem} className="btn-secondary text-sm flex items-center gap-1.5">
-                  <Plus size={14} /> Item Manual
-                </button>
+                <Button type="button" variant="secondary" size="sm" icon={Plus} onClick={addManualItem}>Item Manual</Button>
               </div>
               {/* Product search for items */}
               <div className="relative mb-4">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                <input value={productSearch} onChange={e => setProductSearch(e.target.value)}
-                  className="input-field pl-9 text-sm" placeholder="Adicionar produto do estoque..." />
-                {productResults.length > 0 && (
-                  <div className="absolute top-full mt-1 w-full bg-surface-600 border border-white/10 rounded-xl overflow-hidden z-20">
-                    {productResults.map(p => (
-                      <button key={p.id} type="button" onClick={() => addProduct(p)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/5 border-b border-white/[0.05] last:border-0 text-left transition-colors">
-                        <p className="text-sm text-white">{p.name}</p>
-                        <p className="text-sm font-semibold text-accent-green">{formatCurrency(p.salePrice)}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <Input icon={Search} value={productSearch} onChange={e => setProductSearch(e.target.value)}
+                  className="text-sm" placeholder="Adicionar produto do estoque..." />
+                <AnimatePresence>
+                  {productResults.length > 0 && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="absolute top-full mt-1 w-full bg-surface-700 border border-white/10 rounded-xl overflow-hidden z-20">
+                      {productResults.map(p => (
+                        <button key={p.id} type="button" onClick={() => addProduct(p)}
+                          className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/5 border-b border-white/[0.05] last:border-0 text-left transition-colors">
+                          <p className="text-sm text-white">{p.name}</p>
+                          <p className="text-sm font-semibold text-accent-green">{formatCurrency(p.salePrice)}</p>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
               <div className="space-y-2">
                 {items.map((item, idx) => (
@@ -251,12 +253,12 @@ export default function NewServicePage() {
                   <p className="text-sm text-white/25 text-center py-4">Nenhum item adicionado</p>
                 )}
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Summary sidebar */}
           <div className="space-y-4">
-            <div className="glass-card p-5">
+            <Card>
               <h2 className="font-display font-semibold text-white mb-4">Resumo da OS</h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-white/60">
@@ -270,15 +272,10 @@ export default function NewServicePage() {
                   <span className="text-accent-green">{formatCurrency(total)}</span>
                 </div>
               </div>
-              <button type="submit" disabled={loading || !selectedClient}
-                className="btn-primary w-full mt-4 py-3 flex items-center justify-center gap-2 disabled:opacity-40">
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <><CheckCircle size={18} /> Criar OS</>
-                )}
-              </button>
-            </div>
+              <Button type="submit" disabled={!selectedClient} loading={loading} size="lg" icon={CheckCircle} className="w-full mt-4">
+                Criar OS
+              </Button>
+            </Card>
           </div>
         </div>
       </form>
