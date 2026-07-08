@@ -50,10 +50,9 @@ export function HeroCarousel() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Dark grade for text legibility — deliberately heavier than a
-          pure decorative overlay since real body copy sits on top */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0d0f]/90 via-[#0c0d0f]/80 to-[#0c0d0f]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d0f]/70 via-transparent to-[#0c0d0f]/40" />
+      {/* Dark grade for text legibility — light enough that the photos actually read */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0d0f]/55 via-[#0c0d0f]/35 to-[#0c0d0f]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d0f]/45 via-transparent to-[#0c0d0f]/25" />
 
       {/* Slide indicators */}
       <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
