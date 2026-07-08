@@ -17,31 +17,37 @@ const FEATURES = [
     icon: Users,
     title: 'Clientes e Veículos',
     description: 'Cadastro completo com histórico de atendimentos e veículos vinculados a cada cliente.',
+    image: '/assets/features/feature-clientes.jpg',
   },
   {
     icon: ShoppingCart,
     title: 'PDV — Ponto de Venda',
     description: 'Registre vendas em segundos, com desconto e múltiplas formas de pagamento.',
+    image: '/assets/features/feature-pdv.jpg',
   },
   {
     icon: Wrench,
     title: 'Ordens de Serviço',
     description: 'Troca de pneus, balanceamento, alinhamento — status em tempo real do início ao fim.',
+    image: '/assets/features/feature-servicos.jpg',
   },
   {
     icon: Package,
     title: 'Controle de Estoque',
     description: 'Pneus, peças e materiais com alertas automáticos de estoque baixo.',
+    image: '/assets/features/feature-estoque.jpg',
   },
   {
     icon: DollarSign,
     title: 'Financeiro Completo',
     description: 'Contas a pagar e a receber, fluxo de caixa mensal, tudo organizado.',
+    image: '/assets/features/feature-financeiro.jpg',
   },
   {
     icon: BarChart3,
     title: 'Dashboard em Tempo Real',
     description: 'Faturamento do dia, serviços em aberto e estoque crítico, de relance.',
+    image: null,
   },
 ]
 
@@ -212,17 +218,26 @@ export default function LandingPage() {
                 data-cursor-hover
                 className="card group relative overflow-hidden p-6 transition-colors duration-300 hover:border-yellow-400/30"
               >
+                {feature.image && (
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-center opacity-[0.16] transition-all duration-500 ease-out-expo group-hover:opacity-[0.26] group-hover:scale-105"
+                      style={{ backgroundImage: `url(${feature.image})` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#131417] via-[#131417]/85 to-[#131417]/60" />
+                  </>
+                )}
                 <div
                   className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
                   style={{ background: 'radial-gradient(circle, rgba(245,200,0,0.25) 0%, transparent 70%)' }}
                 />
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-yellow-400/10">
+                <div className="relative mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-yellow-400/10">
                   <feature.icon size={20} className="text-yellow-400" />
                 </div>
-                <h3 className="font-display text-lg font-bold uppercase tracking-wide">
+                <h3 className="relative font-display text-lg font-bold uppercase tracking-wide">
                   {feature.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/55">
+                <p className="relative mt-2 text-sm leading-relaxed text-white/55">
                   {feature.description}
                 </p>
               </motion.div>
