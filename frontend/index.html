@@ -5,9 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TireMax ERP — Gestão de Borracharia</title>
+    <meta
+      name="description"
+      content="Sistema de gestão completo para borracharias e centros automotivos: clientes, veículos, PDV, ordens de serviço, estoque e financeiro em um só lugar. 30 dias grátis, sem cartão de crédito."
+    />
+    <meta property="og:title" content="TireMax ERP — Gestão completa para borracharias" />
+    <meta
+      property="og:description"
+      content="Clientes, veículos, PDV, ordens de serviço, estoque e financeiro em um só sistema. Teste grátis por 30 dias."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+    <!--
+      Google tag (gtag.js) — GA4 + Google Ads conversion tracking.
+      SETUP REQUIRED before running paid traffic:
+      1. Replace G-XXXXXXXXXX below with your real GA4 Measurement ID
+         (Google Analytics → Admin → Data Streams → your stream).
+      2. Replace AW-XXXXXXXXX with your real Google Ads conversion ID
+         (Google Ads → Goals → Conversions).
+      3. src/utils/analytics.js has the matching conversion label to update.
+    -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+      gtag('config', 'AW-XXXXXXXXX');
+    </script>
   </head>
   <body class="bg-[#0c0c0c] text-white antialiased">
     <div id="root"></div>

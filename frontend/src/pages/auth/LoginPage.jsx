@@ -8,8 +8,8 @@ import toast from 'react-hot-toast'
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@tiremax.com')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -96,23 +96,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-        </div>
-
-        {/* Quick access */}
-        <div className="mt-4 p-3 bg-[#131313] border border-white/[0.05] rounded-xl">
-          <p className="text-xs text-white/25 text-center mb-2 uppercase tracking-wider font-mono">Acesso Rápido (Demo)</p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: 'Admin', email: 'admin@tiremax.com', pass: 'admin123' },
-              { label: 'Funcionário', email: 'funcionario@tiremax.com', pass: 'emp123' },
-              { label: 'Financeiro', email: 'financeiro@tiremax.com', pass: 'fin123' },
-            ].map(acc => (
-              <button key={acc.label} onClick={() => { setEmail(acc.email); setPassword(acc.pass) }}
-                className="text-[11px] text-white/35 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] rounded-lg px-2 py-1.5 transition-colors font-medium">
-                {acc.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         <p className="text-center text-xs text-white/40 mt-4">Não tem conta? <a href="/register" className="text-yellow-400 hover:underline">Criar conta grátis</a></p>

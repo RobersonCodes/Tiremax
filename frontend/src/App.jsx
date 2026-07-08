@@ -4,6 +4,9 @@ import { SettingsProvider } from './contexts/SettingsContext'
 import { PrivateRoute } from './components/PrivateRoute'
 import AppLayout from './layouts/AppLayout'
 
+import LandingPage from './pages/marketing/LandingPage'
+import PrivacyPage from './pages/legal/PrivacyPage'
+import TermsPage from './pages/legal/TermsPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
@@ -28,10 +31,16 @@ export default function App() {
       <AuthProvider>
         <SettingsProvider>
           <Routes>
+            {/* Public marketing site — this is what Google Ads / cold traffic should land on */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/privacidade" element={<PrivacyPage />} />
+            <Route path="/termos" element={<TermsPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
+
+            {/* Authenticated app — same URLs as before (no /app prefix), just no
+                longer nested under "/" so the landing page can own that path. */}
+            <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="admin" element={<SuperAdminPage />} />
               <Route path="clients" element={<ClientsPage />} />
@@ -48,7 +57,8 @@ export default function App() {
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </SettingsProvider>
       </AuthProvider>

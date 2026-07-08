@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import api from '../../services/api'
+import { trackTrialSignupConversion } from '../../utils/analytics'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -41,6 +42,7 @@ export default function RegisterPage() {
         adminPassword: form.adminPassword,
         plan: 'TRIAL',
       })
+      trackTrialSignupConversion({ tenantName: form.name })
       setSuccess(true)
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao criar conta')
@@ -161,7 +163,10 @@ export default function RegisterPage() {
         </div>
 
         <p className="text-center text-zinc-600 text-xs mt-4">
-          Ao criar uma conta, você concorda com nossos termos de uso e política de privacidade.
+          Ao criar uma conta, você concorda com nossos{' '}
+          <Link to="/termos" className="text-yellow-400/70 hover:underline">termos de uso</Link>
+          {' '}e{' '}
+          <Link to="/privacidade" className="text-yellow-400/70 hover:underline">política de privacidade</Link>.
         </p>
       </motion.div>
     </div>
