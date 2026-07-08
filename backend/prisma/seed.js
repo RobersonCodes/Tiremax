@@ -4,6 +4,19 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' && !process.env.FORCE_SEED) {
+    console.error(
+      '\n🚫 Seed bloqueado: NODE_ENV=production.\n' +
+      'Este script recria contas demo com senhas fixas e conhecidas ' +
+      '(admin@tiremax.com / admin123, etc.) — rodá-lo em produção reabre ' +
+      'o problema de segurança já corrigido.\n' +
+      'Se você TEM CERTEZA que quer rodar mesmo assim, use:\n' +
+      '  FORCE_SEED=true npm run db:seed\n',
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   console.log('🌱 Iniciando seed multi-tenant...');
 
   // Tenant demo: TireMax Demo
