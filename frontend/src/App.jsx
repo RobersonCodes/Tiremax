@@ -14,6 +14,7 @@ import ClientsPage from './pages/clients/ClientsPage'
 import ClientDetailPage from './pages/clients/ClientDetailPage'
 import InventoryPage from './pages/inventory/InventoryPage'
 import ProductDetailPage from './pages/inventory/ProductDetailPage'
+import StockMovementsPage from './pages/inventory/StockMovementsPage'
 import SalesPage from './pages/sales/SalesPage'
 import POSPage from './pages/sales/POSPage'
 import SaleDetailPage from './pages/sales/SaleDetailPage'
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="clients" element={<ClientsPage />} />
               <Route path="clients/:id" element={<ClientDetailPage />} />
               <Route path="inventory" element={<InventoryPage />} />
+              <Route path="inventory/movements" element={<StockMovementsPage />} />
               <Route path="inventory/:id" element={<ProductDetailPage />} />
               <Route path="sales" element={<SalesPage />} />
               <Route path="sales/new" element={<POSPage />} />
