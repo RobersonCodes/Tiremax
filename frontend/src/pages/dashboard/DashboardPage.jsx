@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { TrendingUp, AlertTriangle, ArrowRight, Plus, Wrench, DollarSign, Users, Ticket } from 'lucide-react'
+import {
+  ArrowRight, DollarSign, Wrench, Users, Ticket, AlertTriangle, CheckCircle2, Calendar,
+} from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import api from '../../services/api'
-import { StatusBadge, Skeleton } from '../../components/ui/index'
+import { StatusBadge, Skeleton, MetricCard } from '../../components/ui/index'
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/format'
 import { useAuth } from '../../contexts/AuthContext'
+
+const EASE = [0.16, 1, 0.3, 1]
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -54,7 +58,7 @@ export default function DashboardPage() {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null
     return (
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-3 text-xs shadow-xl">
+      <div className="bg-[#191b1f] border border-white/10 rounded-xl p-3 text-xs shadow-card">
         <p className="text-white/40 mb-1">{label}</p>
         {payload.map(p => (
           <p key={p.name} style={{ color: p.color }} className="font-semibold">
@@ -68,82 +72,82 @@ export default function DashboardPage() {
   const ticketMedio = metrics && metrics.salesToday?.count > 0
     ? metrics.salesToday.revenue / metrics.salesToday.count : 0
 
+  const metricCards = [
+    {
+      title: 'Faturamento Hoje',
+      value: formatCurrency(metrics?.salesToday?.revenue || 0),
+      subtitle: `${metrics?.salesToday?.count || 0} vendas hoje`,
+      icon: DollarSign,
+    },
+    {
+      title: 'Ordens de Serviço',
+      value: metrics?.servicesOpen || 0,
+      subtitle: `${metrics?.servicesMonth || 0} este mês`,
+      icon: Wrench,
+    },
+    {
+      title: 'Clientes Atendidos',
+      value: metrics?.totalClients || 0,
+      subtitle: `+${metrics?.newClientsMonth || 0} novos`,
+      icon: Users,
+    },
+    {
+      title: 'Ticket Médio',
+      value: formatCurrency(ticketMedio),
+      subtitle: 'Baseado no faturamento do mês',
+      icon: Ticket,
+    },
+  ]
+
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-5">
       {/* Page title */}
-      <div className="flex items-start justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: EASE }}
+        className="flex items-start justify-between"
+      >
         <div>
-          <h1 className="font-display font-black text-2xl text-white">
-            Olá, {user?.name?.split(' ')[0]}! 👋
+          <h1 className="font-display font-bold text-2xl text-white tracking-tight">
+            Olá, {user?.name?.split(' ')[0]}
           </h1>
           <p className="text-sm text-white/40 mt-0.5">Aqui está o resumo da sua borracharia hoje.</p>
         </div>
-        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-white/[0.07] rounded-lg px-3 py-2 text-sm text-white/50 cursor-pointer">
-          📅 {formatDate(new Date())}
+        <div className="hidden sm:flex items-center gap-2 bg-[#191b1f] border border-white/[0.06] rounded-lg px-3 py-2 text-sm text-white/50">
+          <Calendar size={14} className="text-white/30" />
+          {formatDate(new Date())}
         </div>
-      </div>
+      </motion.div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          {
-            label: 'Faturamento Hoje',
-            value: loading ? null : formatCurrency(metrics?.salesToday?.revenue || 0),
-            sub: `↑ ${metrics?.salesToday?.count || 0} vendas`,
-            icon: '💲', iconBg: 'bg-yellow-400', iconColor: 'text-black', subColor: 'text-green-400',
-          },
-          {
-            label: 'Ordens de Serviço',
-            value: loading ? null : metrics?.servicesOpen || 0,
-            sub: `${metrics?.servicesMonth || 0} este mês`,
-            icon: '🛞', iconBg: 'bg-[#1a1a1a] border border-white/[0.07]', iconColor: 'text-white', subColor: 'text-yellow-400',
-          },
-          {
-            label: 'Clientes Atendidos',
-            value: loading ? null : metrics?.totalClients || 0,
-            sub: `+${metrics?.newClientsMonth || 0} novos`,
-            icon: '👤', iconBg: 'bg-[#1a1a1a] border border-white/[0.07]', iconColor: 'text-white', subColor: 'text-green-400',
-          },
-          {
-            label: 'Ticket Médio',
-            value: loading ? null : formatCurrency(ticketMedio),
-            sub: `↑ faturamento mês`,
-            icon: '🎫', iconBg: 'bg-[#1a1a1a] border border-white/[0.07]', iconColor: 'text-white', subColor: 'text-green-400',
-          },
-        ].map((m, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-            className="bg-[#131313] border border-white/[0.07] hover:border-yellow-400/20 rounded-xl p-4 flex items-center gap-3 transition-all cursor-pointer">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 ${m.iconBg}`}
-              style={m.iconBg === 'bg-yellow-400' ? { boxShadow: '0 4px 16px rgba(245,200,0,0.25)' } : {}}>
-              {m.icon}
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-white/35 uppercase tracking-wide mb-0.5">{m.label}</p>
-              {loading ? <Skeleton className="h-7 w-24 mb-1" /> : (
-                <p className="font-display font-black text-xl text-white leading-none mb-0.5">{m.value}</p>
-              )}
-              <p className={`text-xs ${m.subColor}`}>{m.sub}</p>
-            </div>
-          </motion.div>
+        {metricCards.map((m) => (
+          <MetricCard key={m.title} {...m} loading={loading} />
         ))}
       </div>
 
-      {/* Chart + Agendamentos */}
+      {/* Chart + Low stock */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Chart */}
-        <div className="lg:col-span-2 bg-[#131313] border border-white/[0.07] rounded-xl p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.1, ease: EASE }}
+          className="lg:col-span-2 card p-5"
+        >
           <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="font-display font-black text-sm uppercase tracking-wide text-white">
-                Faturamento dos Últimos {period === '7d' ? '7' : period === '30d' ? '30' : '90'} Dias
-              </h2>
-            </div>
-            <div className="flex gap-1 bg-[#1a1a1a] border border-white/[0.07] p-1 rounded-lg">
+            <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70">
+              Faturamento — Últimos {period === '7d' ? '7' : period === '30d' ? '30' : '90'} Dias
+            </h2>
+            <div className="flex gap-1 bg-[#191b1f] border border-white/[0.06] p-1 rounded-lg">
               {['7d', '30d', '90d'].map(p => (
-                <button key={p} onClick={() => setPeriod(p)}
-                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all uppercase ${
-                    period === p ? 'bg-yellow-400 text-black' : 'text-white/35 hover:text-white/70'
-                  }`}>
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all duration-200 ease-out-expo uppercase ${
+                    period === p ? 'bg-brand-500 text-[#08090a]' : 'text-white/35 hover:text-white/70'
+                  }`}
+                >
                   {p === '7d' ? '7 dias' : p === '30d' ? '30d' : '90d'}
                 </button>
               ))}
@@ -154,8 +158,8 @@ export default function DashboardPage() {
               <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                 <defs>
                   <linearGradient id="gV" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f5c800" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#f5c800" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#f0b400" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#f0b400" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gS" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#22c55e" stopOpacity={0.2} />
@@ -166,51 +170,67 @@ export default function DashboardPage() {
                 <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v/1000).toFixed(0)}k`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="vendas" name="Vendas" stroke="#f5c800" strokeWidth={2.5} fill="url(#gV)" dot={{ fill: '#f5c800', strokeWidth: 0, r: 4 }} />
+                <Area type="monotone" dataKey="vendas" name="Vendas" stroke="#f0b400" strokeWidth={2.5} fill="url(#gV)" dot={{ fill: '#f0b400', strokeWidth: 0, r: 4 }} />
                 <Area type="monotone" dataKey="servicos" name="Serviços" stroke="#22c55e" strokeWidth={2} fill="url(#gS)" dot={{ fill: '#22c55e', strokeWidth: 0, r: 3 }} />
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </motion.div>
 
-        {/* Low stock / recent */}
-        <div className="bg-[#131313] border border-white/[0.07] rounded-xl p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.16, ease: EASE }}
+          className="card p-5"
+        >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-black text-sm uppercase tracking-wide">
-              ⚠️ Alertas de Estoque
+            <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70 flex items-center gap-1.5">
+              <AlertTriangle size={14} className="text-brand-500" /> Alertas de Estoque
             </h2>
-            <Link to="/inventory" className="text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1">
+            <Link to="/inventory" className="text-xs text-brand-500 hover:text-brand-400 flex items-center gap-1">
               Ver estoque <ArrowRight size={12} />
             </Link>
           </div>
           <div className="space-y-2">
             {loading ? Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />) :
             lowStock.length === 0 ? (
-              <div className="text-center py-8 text-white/25 text-sm">✅ Estoque em dia!</div>
+              <div className="flex flex-col items-center gap-2 py-8 text-white/25 text-sm">
+                <CheckCircle2 size={22} className="text-green-500/40" />
+                Estoque em dia
+              </div>
             ) : lowStock.slice(0, 5).map(p => (
-              <div key={p.id} className="flex items-center gap-3 p-3 bg-[#1a1a1a] border border-white/[0.05] rounded-xl">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
+              <div key={p.id} className="flex items-center gap-3 p-3 bg-[#191b1f] border border-white/[0.05] rounded-xl">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                   p.stock === 0 ? 'bg-red-500/10 border border-red-500/20' : 'bg-orange-500/10 border border-orange-500/20'
-                }`}>⚠️</div>
+                }`}>
+                  <AlertTriangle size={14} className={p.stock === 0 ? 'text-red-400' : 'text-orange-400'} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white/80 truncate font-medium">{p.name}</p>
                   <p className="text-xs text-white/30 font-mono">{p.code}</p>
                 </div>
                 <div className="text-right">
-                  <p className={`text-sm font-black font-display ${p.stock === 0 ? 'text-red-400' : 'text-orange-400'}`}>{p.stock}</p>
+                  <p className={`text-sm font-bold font-display ${p.stock === 0 ? 'text-red-400' : 'text-orange-400'}`}>{p.stock}</p>
                   <p className="text-[10px] text-white/25">min {p.minStock}</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* OS recentes + Serviços */}
-      <div className="bg-[#131313] border border-white/[0.07] rounded-xl overflow-hidden">
+      {/* Recent orders */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.22, ease: EASE }}
+        className="card overflow-hidden p-0"
+      >
         <div className="flex items-center justify-between p-5 border-b border-white/[0.05]">
-          <h2 className="font-display font-black text-sm uppercase tracking-wide">Ordens de Serviço Recentes</h2>
-          <Link to="/services" className="text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1">
+          <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70">
+            Ordens de Serviço Recentes
+          </h2>
+          <Link to="/services" className="text-xs text-brand-500 hover:text-brand-400 flex items-center gap-1">
             Ver todas <ArrowRight size={12} />
           </Link>
         </div>
@@ -232,17 +252,17 @@ export default function DashboardPage() {
             )) : recentSales.map(sale => (
               <tr key={sale.id} className="table-row">
                 <td className="table-cell">
-                  <Link to={`/sales/${sale.id}`} className="font-mono text-yellow-400 text-sm font-bold">#{sale.number}</Link>
+                  <Link to={`/sales/${sale.id}`} className="font-mono text-brand-500 text-sm font-semibold">#{sale.number}</Link>
                 </td>
                 <td className="table-cell hidden md:table-cell text-white/70">{sale.client?.name || '— Avulso'}</td>
                 <td className="table-cell hidden lg:table-cell text-white/35 text-xs">{formatDateTime(sale.createdAt)}</td>
                 <td className="table-cell text-center"><StatusBadge status={sale.status} /></td>
-                <td className="table-cell text-right font-black font-display text-white">{formatCurrency(sale.total)}</td>
+                <td className="table-cell text-right font-bold font-display text-white">{formatCurrency(sale.total)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </motion.div>
     </div>
   )
 }
