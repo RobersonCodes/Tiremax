@@ -1,11 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Search, Package, AlertTriangle, TrendingDown, TrendingUp, ChevronRight } from 'lucide-react'
+import { Plus, Search, Package, AlertTriangle, TrendingUp, ChevronRight } from 'lucide-react'
 import api from '../../services/api'
-import { PageHeader, EmptyState, Pagination, Skeleton } from '../../components/ui/index'
+import { PageHeader, EmptyState, Pagination, Skeleton, Button, Input, Modal, FormGroup } from '../../components/ui/index'
 import { formatCurrency } from '../../utils/format'
 import toast from 'react-hot-toast'
+
+const TABS = [
+  { id: 'all', label: 'Todos' },
+  { id: 'low', label: 'Baixo' },
+  { id: 'out', label: 'Zerado' },
+]
 
 export default function InventoryPage() {
   const navigate = useNavigate()
@@ -48,45 +54,39 @@ export default function InventoryPage() {
         title="Estoque"
         subtitle={`${total} produtos cadastrados`}
         actions={
-          <div className="flex gap-2">
-            <button onClick={() => navigate('/inventory/movements')} className="btn-secondary text-sm flex items-center gap-1.5">
-              <TrendingUp size={15} /> Movimentações
-            </button>
-            <button onClick={() => setShowModal(true)} className="btn-primary text-sm flex items-center gap-1.5">
-              <Plus size={15} /> Novo Produto
-            </button>
-          </div>
+          <>
+            <Button variant="secondary" icon={TrendingUp} onClick={() => navigate('/inventory/movements')}>
+              Movimentações
+            </Button>
+            <Button icon={Plus} onClick={() => setShowModal(true)}>
+              Novo Produto
+            </Button>
+          </>
         }
       />
 
       {/* Search + Filter */}
-      <div className="glass-card p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-field pl-9"
-            placeholder="Buscar por nome, código, marca..."
-          />
+      <div className="card p-4 flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <Input icon={Search} value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, código, marca..." />
         </div>
-        <div className="flex gap-1 bg-surface-600/50 p-1 rounded-xl">
-          {['all', 'low', 'out'].map(t => (
+        <div className="flex gap-1 bg-surface-700/50 p-1 rounded-xl w-fit">
+          {TABS.map(t => (
             <button
-              key={t}
-              onClick={() => setActiveTab(t)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === t ? 'bg-brand-600 text-white' : 'text-white/40 hover:text-white/70'
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ease-out-expo ${
+                activeTab === t.id ? 'bg-brand-500 text-[#08090a] font-semibold' : 'text-white/40 hover:text-white/70'
               }`}
             >
-              {t === 'all' ? 'Todos' : t === 'low' ? '⚠ Baixo' : '✕ Zerado'}
+              {t.label}
             </button>
           ))}
         </div>
       </div>
 
       {/* Products table */}
-      <div className="glass-card overflow-hidden">
+      <div className="card overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/[0.05]">
@@ -110,15 +110,15 @@ export default function InventoryPage() {
               ))
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16">
+                <td colSpan={7} className="py-4">
                   <EmptyState
                     icon={Package}
                     title="Nenhum produto encontrado"
                     description="Cadastre produtos para gerenciar o estoque"
                     action={
-                      <button onClick={() => setShowModal(true)} className="btn-primary text-sm flex items-center gap-2 mx-auto">
-                        <Plus size={15} /> Cadastrar Produto
-                      </button>
+                      <Button size="sm" icon={Plus} onClick={() => setShowModal(true)}>
+                        Cadastrar Produto
+                      </Button>
                     }
                   />
                 </td>
@@ -138,7 +138,7 @@ export default function InventoryPage() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.02 }}
-                      className="table-row cursor-pointer"
+                      className="table-row"
                       onClick={() => navigate(`/inventory/${p.id}`)}
                     >
                       <td className="table-cell">
@@ -181,12 +181,14 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {showModal && <NewProductModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); load() }} />}
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Novo Produto">
+        <NewProductForm onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); load() }} />
+      </Modal>
     </div>
   )
 }
 
-function NewProductModal({ onClose, onSuccess }) {
+function NewProductForm({ onClose, onSuccess }) {
   const [form, setForm] = useState({
     code: '', name: '', brand: '', unit: 'UN',
     costPrice: '', salePrice: '', stock: 0, minStock: 5,
@@ -215,62 +217,43 @@ function NewProductModal({ onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative w-full max-w-lg glass-card z-10"
-      >
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.05]">
-          <h2 className="font-display font-semibold text-white">Novo Produto</h2>
-          <button onClick={onClose} className="btn-ghost p-1.5 rounded-lg text-white/40">✕</button>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <FormGroup label="Código" required>
+          <Input value={form.code} onChange={set('code')} placeholder="PNE001" required />
+        </FormGroup>
+        <FormGroup label="Unidade">
+          <select value={form.unit} onChange={set('unit')} className="input-field">
+            {['UN', 'JG', 'LT', 'KG', 'MT', 'PC'].map(u => <option key={u}>{u}</option>)}
+          </select>
+        </FormGroup>
+        <div className="col-span-2">
+          <FormGroup label="Nome" required>
+            <Input value={form.name} onChange={set('name')} placeholder="Nome do produto" required />
+          </FormGroup>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Código *</label>
-              <input value={form.code} onChange={set('code')} className="input-field" placeholder="PNE001" required />
-            </div>
-            <div>
-              <label className="label">Unidade</label>
-              <select value={form.unit} onChange={set('unit')} className="input-field">
-                {['UN', 'JG', 'LT', 'KG', 'MT', 'PC'].map(u => <option key={u}>{u}</option>)}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="label">Nome *</label>
-              <input value={form.name} onChange={set('name')} className="input-field" placeholder="Nome do produto" required />
-            </div>
-            <div>
-              <label className="label">Marca</label>
-              <input value={form.brand} onChange={set('brand')} className="input-field" placeholder="Michelin" />
-            </div>
-            <div>
-              <label className="label">Estoque inicial</label>
-              <input type="number" value={form.stock} onChange={set('stock')} className="input-field" min={0} />
-            </div>
-            <div>
-              <label className="label">Custo (R$) *</label>
-              <input type="number" step="0.01" value={form.costPrice} onChange={set('costPrice')} className="input-field" placeholder="0,00" required />
-            </div>
-            <div>
-              <label className="label">Venda (R$) *</label>
-              <input type="number" step="0.01" value={form.salePrice} onChange={set('salePrice')} className="input-field" placeholder="0,00" required />
-            </div>
-            <div>
-              <label className="label">Estoque mínimo</label>
-              <input type="number" value={form.minStock} onChange={set('minStock')} className="input-field" min={0} />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
-            <button type="submit" disabled={loading} className="btn-primary flex-1">
-              {loading ? 'Salvando...' : 'Cadastrar'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
+        <FormGroup label="Marca">
+          <Input value={form.brand} onChange={set('brand')} placeholder="Michelin" />
+        </FormGroup>
+        <FormGroup label="Estoque inicial">
+          <Input type="number" value={form.stock} onChange={set('stock')} min={0} />
+        </FormGroup>
+        <FormGroup label="Custo (R$)" required>
+          <Input type="number" step="0.01" value={form.costPrice} onChange={set('costPrice')} placeholder="0,00" required />
+        </FormGroup>
+        <FormGroup label="Venda (R$)" required>
+          <Input type="number" step="0.01" value={form.salePrice} onChange={set('salePrice')} placeholder="0,00" required />
+        </FormGroup>
+        <FormGroup label="Estoque mínimo">
+          <Input type="number" value={form.minStock} onChange={set('minStock')} min={0} />
+        </FormGroup>
+      </div>
+      <div className="flex gap-3 pt-2">
+        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+        <Button type="submit" className="flex-1" loading={loading}>
+          {loading ? 'Salvando...' : 'Cadastrar'}
+        </Button>
+      </div>
+    </form>
   )
 }

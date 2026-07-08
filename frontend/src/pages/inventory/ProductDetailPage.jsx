@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Package, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import api from '../../services/api'
-import { Skeleton, StatusBadge } from '../../components/ui/index'
+import { Skeleton, Card, Button, Input, FormGroup, Modal } from '../../components/ui/index'
 import { formatCurrency, formatDateTime } from '../../utils/format'
 import toast from 'react-hot-toast'
 
@@ -31,18 +31,18 @@ export default function ProductDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <button onClick={() => navigate(-1)} className="btn-ghost flex items-center gap-2 text-sm">
-        <ArrowLeft size={16} /> Voltar ao Estoque
-      </button>
+      <Button variant="ghost" icon={ArrowLeft} onClick={() => navigate(-1)}>
+        Voltar ao Estoque
+      </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Product info */}
         <div className="lg:col-span-2 space-y-4">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
-            <div className="flex items-start justify-between gap-4">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-brand-600/20 flex items-center justify-center">
-                  <Package size={22} className="text-brand-400" />
+                <div className="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/15 flex items-center justify-center shrink-0">
+                  <Package size={22} className="text-brand-500" />
                 </div>
                 <div>
                   <h1 className="text-xl font-display font-bold text-white">{product.name}</h1>
@@ -50,19 +50,19 @@ export default function ProductDetailPage() {
                   {product.brand && <p className="text-sm text-white/50 mt-1">{product.brand}</p>}
                 </div>
               </div>
-              <button onClick={() => setShowMovModal(true)} className="btn-secondary text-sm flex items-center gap-1.5">
-                <RefreshCw size={14} /> Movimentar
-              </button>
+              <Button variant="secondary" icon={RefreshCw} onClick={() => setShowMovModal(true)}>
+                Movimentar
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
               {[
                 { label: 'Custo', value: formatCurrency(product.costPrice), color: 'text-white/70' },
                 { label: 'Venda', value: formatCurrency(product.salePrice), color: 'text-accent-green font-semibold' },
-                { label: 'Margem', value: `${margin}%`, color: 'text-brand-300' },
+                { label: 'Margem', value: `${margin}%`, color: 'text-brand-500' },
                 { label: 'Unidade', value: product.unit, color: 'text-white/70' },
               ].map(m => (
-                <div key={m.label} className="bg-surface-600/40 rounded-xl p-3 text-center">
+                <div key={m.label} className="bg-surface-700 rounded-xl p-3 text-center">
                   <p className="text-xs text-white/35 mb-1">{m.label}</p>
                   <p className={`text-sm ${m.color}`}>{m.value}</p>
                 </div>
@@ -71,14 +71,14 @@ export default function ProductDetailPage() {
           </motion.div>
 
           {/* Stock movements */}
-          <div className="glass-card p-5">
+          <Card>
             <h2 className="font-display font-semibold text-white mb-4">Últimas Movimentações</h2>
             <div className="space-y-2">
               {product.stockMovements?.length === 0 ? (
                 <p className="text-white/30 text-sm text-center py-6">Nenhuma movimentação registrada</p>
               ) : (
                 product.stockMovements?.map(m => (
-                  <div key={m.id} className="flex items-center justify-between p-3 bg-surface-600/40 rounded-xl">
+                  <div key={m.id} className="flex items-center justify-between p-3 bg-surface-700 rounded-xl">
                     <div className="flex items-center gap-3">
                       {m.type === 'IN' ? (
                         <TrendingUp size={16} className="text-accent-green" />
@@ -102,13 +102,13 @@ export default function ProductDetailPage() {
                 ))
               )}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Stock sidebar */}
         <div className="space-y-4">
           <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-            className="glass-card p-5 text-center">
+            className="card p-5 text-center">
             <p className="text-xs text-white/35 uppercase tracking-wider mb-2">Estoque Atual</p>
             <p className={`text-5xl font-display font-bold mb-1 ${
               product.stock === 0 ? 'text-accent-red' :
@@ -138,7 +138,7 @@ export default function ProductDetailPage() {
           </motion.div>
 
           {product.location && (
-            <div className="glass-card p-4">
+            <div className="card p-4">
               <p className="text-xs text-white/35 mb-1">Localização</p>
               <p className="text-sm text-white">{product.location}</p>
             </div>
@@ -146,14 +146,14 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {showMovModal && (
-        <StockMovModal product={product} onClose={() => setShowMovModal(false)} onSuccess={() => { setShowMovModal(false); load() }} />
-      )}
+      <Modal open={showMovModal} onClose={() => setShowMovModal(false)} title="Movimentar Estoque">
+        <StockMovForm product={product} onClose={() => setShowMovModal(false)} onSuccess={() => { setShowMovModal(false); load() }} />
+      </Modal>
     </div>
   )
 }
 
-function StockMovModal({ product, onClose, onSuccess }) {
+function StockMovForm({ product, onClose, onSuccess }) {
   const [form, setForm] = useState({ type: 'IN', quantity: 1, reason: '', notes: '' })
   const [loading, setLoading] = useState(false)
   const set = (f) => (e) => setForm(x => ({ ...x, [f]: e.target.value }))
@@ -171,46 +171,30 @@ function StockMovModal({ product, onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-        className="relative w-full max-w-md glass-card z-10">
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.05]">
-          <h2 className="font-display font-semibold text-white">Movimentar Estoque</h2>
-          <button onClick={onClose} className="btn-ghost p-1.5 text-white/40">✕</button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div>
-            <p className="text-sm text-white/60 mb-3">{product.name} · Estoque atual: <strong className="text-white">{product.stock}</strong></p>
-          </div>
-          <div>
-            <label className="label">Tipo</label>
-            <select value={form.type} onChange={set('type')} className="input-field">
-              <option value="IN">Entrada</option>
-              <option value="OUT">Saída</option>
-              <option value="ADJUSTMENT">Ajuste (definir total)</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Quantidade *</label>
-            <input type="number" min={1} value={form.quantity} onChange={set('quantity')} className="input-field" required />
-          </div>
-          <div>
-            <label className="label">Motivo *</label>
-            <input value={form.reason} onChange={set('reason')} className="input-field" placeholder="Compra, Devolução, Inventário..." required />
-          </div>
-          <div>
-            <label className="label">Observações</label>
-            <textarea value={form.notes} onChange={set('notes')} className="input-field h-20 resize-none" />
-          </div>
-          <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
-            <button type="submit" disabled={loading} className="btn-primary flex-1">
-              {loading ? 'Salvando...' : 'Confirmar'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <p className="text-sm text-white/60">{product.name} · Estoque atual: <strong className="text-white">{product.stock}</strong></p>
+      <FormGroup label="Tipo">
+        <select value={form.type} onChange={set('type')} className="input-field">
+          <option value="IN">Entrada</option>
+          <option value="OUT">Saída</option>
+          <option value="ADJUSTMENT">Ajuste (definir total)</option>
+        </select>
+      </FormGroup>
+      <FormGroup label="Quantidade" required>
+        <Input type="number" min={1} value={form.quantity} onChange={set('quantity')} required />
+      </FormGroup>
+      <FormGroup label="Motivo" required>
+        <Input value={form.reason} onChange={set('reason')} placeholder="Compra, Devolução, Inventário..." required />
+      </FormGroup>
+      <FormGroup label="Observações">
+        <textarea value={form.notes} onChange={set('notes')} className="input-field h-20 resize-none" />
+      </FormGroup>
+      <div className="flex gap-3">
+        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+        <Button type="submit" className="flex-1" loading={loading}>
+          {loading ? 'Salvando...' : 'Confirmar'}
+        </Button>
+      </div>
+    </form>
   )
 }
