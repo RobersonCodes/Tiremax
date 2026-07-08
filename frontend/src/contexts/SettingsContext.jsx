@@ -29,8 +29,24 @@ export function SettingsProvider({ children }) {
     } catch {}
   }
 
+  const update = async (form) => {
+    const { data } = await api.put('/settings', form)
+    setSettings(data)
+    return data
+  }
+
+  const uploadLogo = async (file) => {
+    const formData = new FormData()
+    formData.append('logo', file)
+    const { data } = await api.post('/settings/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    setSettings(s => ({ ...s, logo: data.logo }))
+    return data.logo
+  }
+
   return (
-    <SettingsContext.Provider value={{ settings, setSettings, reload }}>
+    <SettingsContext.Provider value={{ settings, setSettings, reload, update, uploadLogo }}>
       {children}
     </SettingsContext.Provider>
   )

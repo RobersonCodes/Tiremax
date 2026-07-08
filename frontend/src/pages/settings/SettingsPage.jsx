@@ -1,17 +1,20 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Save, Upload, Store, Phone, Clock, MapPin, Mail, Palette, X } from 'lucide-react'
+import { Save, Upload, Store, Phone, Clock, MapPin, Palette, X, Info, Lock } from 'lucide-react'
 import { useSettings } from '../../contexts/SettingsContext'
 import { useAuth } from '../../contexts/AuthContext'
-import { PageHeader } from '../../components/ui/index'
+import { PageHeader, Card, Button, Input, FormGroup } from '../../components/ui/index'
 import toast from 'react-hot-toast'
+
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+const SWATCHES = ['#f5c800', '#e8230a', '#3b64ff', '#10b981', '#8b5cf6', '#f97316']
 
 export default function SettingsPage() {
   const { settings, update, uploadLogo } = useSettings()
   const { user } = useAuth()
   const [form, setForm] = useState({ ...settings })
   const [saving, setSaving] = useState(false)
-  const [logoPreview, setLogoPreview] = useState(settings.logo)
+  const [logoPreview, setLogoPreview] = useState(settings.logo ? `${apiBase}${settings.logo}` : null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const logoRef = useRef()
 
@@ -40,7 +43,7 @@ export default function SettingsPage() {
     setUploadingLogo(true)
     try {
       const url = await uploadLogo(file)
-      setLogoPreview(`http://localhost:3001${url}`)
+      setLogoPreview(`${apiBase}${url}`)
       toast.success('Logo atualizado!')
     } catch {
       toast.error('Erro ao enviar logo')
@@ -50,36 +53,36 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <PageHeader
-        title="⚙️ Configurações"
+        title="Configurações"
         subtitle="Personalize o sistema com as informações da sua borracharia"
       />
 
       <form onSubmit={handleSave} className="space-y-5">
 
         {/* Logo + Nome */}
-        <div className="bg-[#131313] border border-white/[0.07] rounded-xl p-5">
-          <h2 className="font-display font-black text-white uppercase text-sm mb-4 flex items-center gap-2">
-            <Store size={16} className="text-yellow-400" /> Identidade Visual
+        <Card>
+          <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70 mb-4 flex items-center gap-2">
+            <Store size={15} className="text-brand-500" /> Identidade Visual
           </h2>
 
           <div className="flex items-start gap-5 mb-5">
             {/* Logo */}
             <div className="flex flex-col items-center gap-2">
-              <div className="w-24 h-24 rounded-xl bg-[#1a1a1a] border-2 border-dashed border-white/[0.07] flex items-center justify-center overflow-hidden relative group cursor-pointer"
+              <div className="w-24 h-24 rounded-xl bg-surface-700 border-2 border-dashed border-white/[0.08] flex items-center justify-center overflow-hidden relative group cursor-pointer"
                 onClick={() => isAdmin && logoRef.current?.click()}>
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-1" />
                 ) : (
-                  <div className="text-4xl">🛞</div>
+                  <Store size={28} className="text-white/20" strokeWidth={1.5} />
                 )}
                 {isAdmin && (
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
-                    <Upload size={20} className="text-yellow-400" />
+                    <Upload size={20} className="text-brand-500" />
                   </div>
                 )}
                 {uploadingLogo && (
                   <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-xl">
-                    <div className="w-6 h-6 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
               </div>
@@ -87,12 +90,12 @@ export default function SettingsPage() {
                 <>
                   <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
                   <button type="button" onClick={() => logoRef.current?.click()}
-                    className="text-xs text-yellow-400 hover:text-yellow-300 font-medium flex items-center gap-1">
+                    className="text-xs text-brand-500 hover:text-brand-400 font-medium flex items-center gap-1 transition-colors">
                     <Upload size={12} /> Trocar logo
                   </button>
                   {logoPreview && (
                     <button type="button" onClick={() => { setLogoPreview(null); setForm(f => ({ ...f, logo: null })) }}
-                      className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                      className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors">
                       <X size={12} /> Remover
                     </button>
                   )}
@@ -102,108 +105,91 @@ export default function SettingsPage() {
 
             {/* Nome e tagline */}
             <div className="flex-1 space-y-3">
-              <div>
-                <label className="label">Nome da Borracharia *</label>
-                <input value={form.name} onChange={set('name')} className="input-field"
-                  placeholder="Ex: João Pneus" disabled={!isAdmin} required />
-              </div>
-              <div>
-                <label className="label">Slogan / Tagline</label>
-                <input value={form.tagline} onChange={set('tagline')} className="input-field"
-                  placeholder="Ex: Tudo para o seu carro!" disabled={!isAdmin} />
-              </div>
+              <FormGroup label="Nome da Borracharia" required>
+                <Input value={form.name} onChange={set('name')} placeholder="Ex: João Pneus" disabled={!isAdmin} required />
+              </FormGroup>
+              <FormGroup label="Slogan / Tagline">
+                <Input value={form.tagline} onChange={set('tagline')} placeholder="Ex: Tudo para o seu carro!" disabled={!isAdmin} />
+              </FormGroup>
             </div>
           </div>
 
           {/* Preview */}
-          <div className="bg-[#0c0c0c] border border-white/[0.05] rounded-xl p-4">
+          <div className="bg-surface-900 border border-white/[0.05] rounded-xl p-4">
             <p className="text-xs text-white/30 mb-3 uppercase tracking-wide">Pré-visualização — como aparece no sistema</p>
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-yellow-400 flex items-center justify-center overflow-hidden"
-                style={{ boxShadow: '0 0 16px rgba(245,200,0,0.3)' }}>
+              <div className="w-11 h-11 rounded-full bg-brand-500 shadow-brand flex items-center justify-center overflow-hidden shrink-0">
                 {logoPreview ? (
                   <img src={logoPreview} alt="" className="w-full h-full object-contain" />
                 ) : (
-                  <span className="text-xl">🛞</span>
+                  <Store size={18} className="text-[#08090a]" />
                 )}
               </div>
               <div>
-                <p className="font-display font-black text-lg text-white uppercase leading-none">
+                <p className="font-display font-bold text-lg text-white leading-none">
                   {form.name || 'Nome da Borracharia'}
                 </p>
-                <p className="text-[10px] text-white/30 uppercase tracking-widest">
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mt-1">
                   {form.tagline || 'Seu slogan aqui'}
                 </p>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Contato */}
-        <div className="bg-[#131313] border border-white/[0.07] rounded-xl p-5">
-          <h2 className="font-display font-black text-white uppercase text-sm mb-4 flex items-center gap-2">
-            <Phone size={16} className="text-yellow-400" /> Contato
+        <Card>
+          <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70 mb-4 flex items-center gap-2">
+            <Phone size={15} className="text-brand-500" /> Contato
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Telefone</label>
-              <input value={form.phone} onChange={set('phone')} className="input-field"
-                placeholder="(11) 99999-9999" disabled={!isAdmin} />
-            </div>
-            <div>
-              <label className="label">WhatsApp</label>
-              <input value={form.whatsapp} onChange={set('whatsapp')} className="input-field"
-                placeholder="5511999999999" disabled={!isAdmin} />
-            </div>
-            <div>
-              <label className="label">E-mail</label>
-              <input type="email" value={form.email} onChange={set('email')} className="input-field"
-                placeholder="contato@borracharia.com" disabled={!isAdmin} />
-            </div>
-            <div>
-              <label className="label">CNPJ</label>
-              <input value={form.cnpj} onChange={set('cnpj')} className="input-field"
-                placeholder="00.000.000/0001-00" disabled={!isAdmin} />
-            </div>
+            <FormGroup label="Telefone">
+              <Input value={form.phone} onChange={set('phone')} placeholder="(11) 99999-9999" disabled={!isAdmin} />
+            </FormGroup>
+            <FormGroup label="WhatsApp">
+              <Input value={form.whatsapp} onChange={set('whatsapp')} placeholder="5511999999999" disabled={!isAdmin} />
+            </FormGroup>
+            <FormGroup label="E-mail">
+              <Input type="email" value={form.email} onChange={set('email')} placeholder="contato@borracharia.com" disabled={!isAdmin} />
+            </FormGroup>
+            <FormGroup label="CNPJ">
+              <Input value={form.cnpj} onChange={set('cnpj')} placeholder="00.000.000/0001-00" disabled={!isAdmin} />
+            </FormGroup>
           </div>
-        </div>
+        </Card>
 
         {/* Endereço */}
-        <div className="bg-[#131313] border border-white/[0.07] rounded-xl p-5">
-          <h2 className="font-display font-black text-white uppercase text-sm mb-4 flex items-center gap-2">
-            <MapPin size={16} className="text-yellow-400" /> Localização
+        <Card>
+          <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70 mb-4 flex items-center gap-2">
+            <MapPin size={15} className="text-brand-500" /> Localização
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="label">Endereço</label>
-              <input value={form.address} onChange={set('address')} className="input-field"
-                placeholder="Rua das Borracharias, 123 - Centro" disabled={!isAdmin} />
+              <FormGroup label="Endereço">
+                <Input value={form.address} onChange={set('address')} placeholder="Rua das Borracharias, 123 - Centro" disabled={!isAdmin} />
+              </FormGroup>
             </div>
-            <div>
-              <label className="label">Cidade</label>
-              <input value={form.city} onChange={set('city')} className="input-field"
-                placeholder="São Paulo" disabled={!isAdmin} />
-            </div>
-            <div>
-              <label className="label">Estado</label>
-              <input value={form.state} onChange={set('state')} className="input-field"
-                placeholder="SP" maxLength={2} disabled={!isAdmin} />
-            </div>
+            <FormGroup label="Cidade">
+              <Input value={form.city} onChange={set('city')} placeholder="São Paulo" disabled={!isAdmin} />
+            </FormGroup>
+            <FormGroup label="Estado">
+              <Input value={form.state} onChange={set('state')} placeholder="SP" maxLength={2} disabled={!isAdmin} />
+            </FormGroup>
             <div className="sm:col-span-2">
-              <label className="label flex items-center gap-1.5"><Clock size={13} /> Horário de Funcionamento</label>
-              <input value={form.openHours} onChange={set('openHours')} className="input-field"
-                placeholder="Seg - Sáb: 08:00 às 18:00" disabled={!isAdmin} />
+              <FormGroup label={<span className="flex items-center gap-1.5"><Clock size={13} /> Horário de Funcionamento</span>}>
+                <Input value={form.openHours} onChange={set('openHours')} placeholder="Seg - Sáb: 08:00 às 18:00" disabled={!isAdmin} />
+              </FormGroup>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Cor principal */}
         {isAdmin && (
-          <div className="bg-[#131313] border border-white/[0.07] rounded-xl p-5">
-            <h2 className="font-display font-black text-white uppercase text-sm mb-4 flex items-center gap-2">
-              <Palette size={16} className="text-yellow-400" /> Cor Principal
+          <Card>
+            <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70 mb-4 flex items-center gap-2">
+              <Palette size={15} className="text-brand-500" /> Cor Principal
             </h2>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <input type="color" value={form.primaryColor || '#f5c800'} onChange={set('primaryColor')}
                 className="w-14 h-14 rounded-xl cursor-pointer border-0 bg-transparent" />
               <div>
@@ -211,36 +197,31 @@ export default function SettingsPage() {
                 <p className="text-xs text-white/35 mt-0.5">Aparece nos botões, destaques e sidebar</p>
               </div>
               <div className="flex gap-2 ml-2">
-                {['#f5c800', '#e8230a', '#3b64ff', '#10b981', '#8b5cf6', '#f97316'].map(c => (
+                {SWATCHES.map(c => (
                   <button key={c} type="button" onClick={() => setForm(f => ({ ...f, primaryColor: c }))}
                     className="w-8 h-8 rounded-lg border-2 transition-all"
                     style={{ background: c, borderColor: form.primaryColor === c ? 'white' : 'transparent' }} />
                 ))}
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Save button */}
         {isAdmin && (
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-white/30">
-              ℹ️ Apenas administradores podem alterar as configurações
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-xs text-white/30 flex items-center gap-1.5">
+              <Info size={13} /> Apenas administradores podem alterar as configurações
             </p>
-            <button type="submit" disabled={saving}
-              className="btn-yellow px-6 py-2.5 disabled:opacity-50">
-              {saving ? (
-                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-              ) : (
-                <><Save size={16} /> Salvar Configurações</>
-              )}
-            </button>
+            <Button type="submit" icon={Save} loading={saving}>
+              {saving ? 'Salvando...' : 'Salvar Configurações'}
+            </Button>
           </div>
         )}
 
         {!isAdmin && (
-          <p className="text-center text-sm text-white/30 py-2">
-            🔒 Apenas administradores podem alterar as configurações
+          <p className="text-center text-sm text-white/30 py-2 flex items-center justify-center gap-1.5">
+            <Lock size={13} /> Apenas administradores podem alterar as configurações
           </p>
         )}
       </form>
