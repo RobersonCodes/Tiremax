@@ -221,10 +221,10 @@ export default function LandingPage() {
                 {feature.image && (
                   <>
                     <div
-                      className="absolute inset-0 bg-cover bg-center opacity-[0.32] transition-all duration-500 ease-out-expo group-hover:opacity-[0.48] group-hover:scale-105"
+                      className="absolute inset-0 bg-cover bg-center opacity-[0.48] transition-all duration-500 ease-out-expo group-hover:opacity-[0.68] group-hover:scale-105"
                       style={{ backgroundImage: `url(${feature.image})` }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#131417] via-[#131417]/55 to-[#131417]/25" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#131417]/95 via-[#131417]/40 to-[#131417]/10" />
                   </>
                 )}
                 <div

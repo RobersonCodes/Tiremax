@@ -51,8 +51,8 @@ export function HeroCarousel() {
       </AnimatePresence>
 
       {/* Dark grade for text legibility — light enough that the photos actually read */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0d0f]/55 via-[#0c0d0f]/35 to-[#0c0d0f]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d0f]/45 via-transparent to-[#0c0d0f]/25" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0d0f]/30 via-[#0c0d0f]/10 to-[#0c0d0f]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d0f]/35 via-transparent to-[#0c0d0f]/10" />
 
       {/* Slide indicators */}
       <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
