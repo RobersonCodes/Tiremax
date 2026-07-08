@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Search, Users, Phone, MessageCircle, ChevronRight, Filter } from 'lucide-react'
+import { Plus, Search, Users, Phone, MessageCircle, ChevronRight } from 'lucide-react'
 import api from '../../services/api'
-import { PageHeader, EmptyState, Pagination, Skeleton } from '../../components/ui/index'
+import { PageHeader, EmptyState, Pagination, Skeleton, Card, Button, Input, Modal, FormGroup } from '../../components/ui/index'
 import { formatDocument, formatPhone } from '../../utils/format'
 import toast from 'react-hot-toast'
 
@@ -43,32 +43,29 @@ export default function ClientsPage() {
   }, [search])
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <PageHeader
         title="Clientes"
         subtitle={`${total} clientes cadastrados`}
         actions={
-          <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 text-sm">
-            <Plus size={16} /> Novo Cliente
-          </button>
+          <Button icon={Plus} onClick={() => setShowModal(true)}>
+            Novo Cliente
+          </Button>
         }
       />
 
       {/* Search */}
-      <div className="glass-card p-4">
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-field pl-9"
-            placeholder="Buscar por nome, CPF/CNPJ, telefone ou e-mail..."
-          />
-        </div>
-      </div>
+      <Card>
+        <Input
+          icon={Search}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar por nome, CPF/CNPJ, telefone ou e-mail..."
+        />
+      </Card>
 
       {/* Table */}
-      <div className="glass-card overflow-hidden">
+      <div className="card overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/[0.05]">
@@ -94,16 +91,16 @@ export default function ClientsPage() {
               ))
             ) : clients.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16">
+                <td colSpan={6} className="py-4">
                   <EmptyState
                     icon={Users}
                     title={search ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
                     description={search ? 'Tente outros termos de busca' : 'Cadastre o primeiro cliente para começar'}
                     action={
                       !search && (
-                        <button onClick={() => setShowModal(true)} className="btn-primary text-sm flex items-center gap-2 mx-auto">
-                          <Plus size={15} /> Cadastrar Cliente
-                        </button>
+                        <Button size="sm" icon={Plus} onClick={() => setShowModal(true)}>
+                          Cadastrar Cliente
+                        </Button>
                       )
                     }
                   />
@@ -116,13 +113,13 @@ export default function ClientsPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="table-row cursor-pointer"
+                  className="table-row"
                   onClick={() => navigate(`/clients/${c.id}`)}
                 >
                   <td className="table-cell">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-brand-600/20 flex items-center justify-center shrink-0">
-                        <span className="text-brand-300 text-xs font-bold">{c.name.charAt(0).toUpperCase()}</span>
+                      <div className="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/15 flex items-center justify-center shrink-0">
+                        <span className="text-brand-500 text-xs font-bold">{c.name.charAt(0).toUpperCase()}</span>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">{c.name}</p>
@@ -169,12 +166,14 @@ export default function ClientsPage() {
       </div>
 
       {/* New Client Modal */}
-      {showModal && <NewClientModal onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); load() }} />}
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Novo Cliente">
+        <NewClientForm onClose={() => setShowModal(false)} onSuccess={() => { setShowModal(false); load() }} />
+      </Modal>
     </div>
   )
 }
 
-function NewClientModal({ onClose, onSuccess }) {
+function NewClientForm({ onClose, onSuccess }) {
   const [form, setForm] = useState({ name: '', document: '', documentType: 'CPF', phone: '', whatsapp: '', email: '', city: '', state: '' })
   const [loading, setLoading] = useState(false)
 
@@ -195,63 +194,46 @@ function NewClientModal({ onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-lg glass-card z-10"
-      >
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.05]">
-          <h2 className="font-display font-semibold text-white">Novo Cliente</h2>
-          <button onClick={onClose} className="btn-ghost p-1.5 rounded-lg text-white/40">✕</button>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2">
+          <FormGroup label="Nome completo" required>
+            <Input value={form.name} onChange={set('name')} placeholder="João da Silva" required />
+          </FormGroup>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">Nome completo *</label>
-              <input value={form.name} onChange={set('name')} className="input-field" placeholder="João da Silva" required />
-            </div>
-            <div>
-              <label className="label">Tipo documento</label>
-              <select value={form.documentType} onChange={set('documentType')} className="input-field">
-                <option value="CPF">CPF</option>
-                <option value="CNPJ">CNPJ</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Documento</label>
-              <input value={form.document} onChange={set('document')} className="input-field" placeholder="000.000.000-00" />
-            </div>
-            <div>
-              <label className="label">Telefone</label>
-              <input value={form.phone} onChange={set('phone')} className="input-field" placeholder="(11) 99999-0000" />
-            </div>
-            <div>
-              <label className="label">WhatsApp</label>
-              <input value={form.whatsapp} onChange={set('whatsapp')} className="input-field" placeholder="11999990000" />
-            </div>
-            <div className="col-span-2">
-              <label className="label">E-mail</label>
-              <input type="email" value={form.email} onChange={set('email')} className="input-field" placeholder="cliente@email.com" />
-            </div>
-            <div>
-              <label className="label">Cidade</label>
-              <input value={form.city} onChange={set('city')} className="input-field" placeholder="São Paulo" />
-            </div>
-            <div>
-              <label className="label">Estado</label>
-              <input value={form.state} onChange={set('state')} className="input-field" placeholder="SP" maxLength={2} />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
-            <button type="submit" disabled={loading} className="btn-primary flex-1">
-              {loading ? 'Salvando...' : 'Cadastrar'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
+        <FormGroup label="Tipo documento">
+          <select value={form.documentType} onChange={set('documentType')} className="input-field">
+            <option value="CPF">CPF</option>
+            <option value="CNPJ">CNPJ</option>
+          </select>
+        </FormGroup>
+        <FormGroup label="Documento">
+          <Input value={form.document} onChange={set('document')} placeholder="000.000.000-00" />
+        </FormGroup>
+        <FormGroup label="Telefone">
+          <Input value={form.phone} onChange={set('phone')} placeholder="(11) 99999-0000" />
+        </FormGroup>
+        <FormGroup label="WhatsApp">
+          <Input value={form.whatsapp} onChange={set('whatsapp')} placeholder="11999990000" />
+        </FormGroup>
+        <div className="col-span-2">
+          <FormGroup label="E-mail">
+            <Input type="email" value={form.email} onChange={set('email')} placeholder="cliente@email.com" />
+          </FormGroup>
+        </div>
+        <FormGroup label="Cidade">
+          <Input value={form.city} onChange={set('city')} placeholder="São Paulo" />
+        </FormGroup>
+        <FormGroup label="Estado">
+          <Input value={form.state} onChange={set('state')} placeholder="SP" maxLength={2} />
+        </FormGroup>
+      </div>
+      <div className="flex gap-3 pt-2">
+        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+        <Button type="submit" className="flex-1" loading={loading}>
+          {loading ? 'Salvando...' : 'Cadastrar'}
+        </Button>
+      </div>
+    </form>
   )
 }

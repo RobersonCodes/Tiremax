@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Phone, MessageCircle, Mail, MapPin, Car, ShoppingCart, Wrench, Edit2, Trash2, Plus } from 'lucide-react'
+import { ArrowLeft, Phone, MessageCircle, Mail, MapPin, Car, ShoppingCart, Wrench, Edit2, Plus } from 'lucide-react'
 import api from '../../services/api'
-import { StatusBadge, Skeleton } from '../../components/ui/index'
+import { StatusBadge, Skeleton, Card, Button } from '../../components/ui/index'
 import { formatCurrency, formatDate, formatDocument, formatPhone } from '../../utils/format'
 import toast from 'react-hot-toast'
 
@@ -40,25 +40,29 @@ export default function ClientDetailPage() {
 
   if (!client) return <div className="text-white/40 text-center py-20">Cliente não encontrado</div>
 
+  const tabs = [
+    { id: 'overview', label: 'Veículos', icon: Car },
+    { id: 'sales', label: 'Compras', icon: ShoppingCart },
+    { id: 'services', label: 'Serviços', icon: Wrench },
+  ]
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Back + actions */}
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="btn-ghost flex items-center gap-2 text-sm">
-          <ArrowLeft size={16} /> Voltar
-        </button>
-        <div className="flex gap-2">
-          <button className="btn-secondary flex items-center gap-2 text-sm">
-            <Edit2 size={15} /> Editar
-          </button>
-        </div>
+        <Button variant="ghost" size="md" icon={ArrowLeft} onClick={() => navigate(-1)}>
+          Voltar
+        </Button>
+        <Button variant="secondary" size="md" icon={Edit2}>
+          Editar
+        </Button>
       </div>
 
       {/* Client header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-brand-600/25 flex items-center justify-center shrink-0">
-            <span className="font-display font-bold text-xl text-brand-300">
+          <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/15 flex items-center justify-center shrink-0">
+            <span className="font-display font-bold text-xl text-brand-500">
               {client.name.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -110,16 +114,12 @@ export default function ClientDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-surface-700/50 p-1 rounded-xl w-fit">
-        {[
-          { id: 'overview', label: 'Veículos', icon: Car },
-          { id: 'sales', label: 'Compras', icon: ShoppingCart },
-          { id: 'services', label: 'Serviços', icon: Wrench },
-        ].map(t => (
+        {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === t.id ? 'bg-brand-600 text-white' : 'text-white/40 hover:text-white/70'
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-out-expo ${
+              tab === t.id ? 'bg-brand-500 text-[#08090a] font-semibold' : 'text-white/40 hover:text-white/70'
             }`}
           >
             <t.icon size={15} /> {t.label}
@@ -129,11 +129,11 @@ export default function ClientDetailPage() {
 
       {/* Tab content */}
       {tab === 'overview' && (
-        <div className="glass-card p-5">
+        <Card>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display font-semibold text-white">Veículos</h3>
-            <Link to={`/services/new?clientId=${id}`} className="btn-secondary text-sm flex items-center gap-1.5">
-              <Plus size={14} /> Novo Serviço
+            <Link to={`/services/new?clientId=${id}`}>
+              <Button variant="secondary" size="sm" icon={Plus}>Novo Serviço</Button>
             </Link>
           </div>
           {client.vehicles?.length === 0 ? (
@@ -142,7 +142,7 @@ export default function ClientDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {client.vehicles.map(v => (
                 <div key={v.id} className="flex items-center gap-3 p-3 bg-surface-600/40 rounded-xl border border-white/[0.05]">
-                  <Car size={20} className="text-brand-400 shrink-0" />
+                  <Car size={20} className="text-brand-500 shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-white">{v.brand} {v.model} {v.year}</p>
                     <p className="text-xs text-white/40 font-mono">{v.plate} · {v.color}</p>
@@ -151,11 +151,11 @@ export default function ClientDetailPage() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {tab === 'sales' && (
-        <div className="glass-card overflow-hidden">
+        <div className="card overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -166,10 +166,12 @@ export default function ClientDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {history.sales.map(s => (
+              {history.sales.length === 0 ? (
+                <tr><td colSpan={4} className="py-8 text-center text-sm text-white/30">Nenhuma compra registrada</td></tr>
+              ) : history.sales.map(s => (
                 <tr key={s.id} className="table-row">
                   <td className="table-cell">
-                    <Link to={`/sales/${s.id}`} className="text-brand-400 font-mono hover:underline">#{s.number}</Link>
+                    <Link to={`/sales/${s.id}`} className="text-brand-500 font-mono hover:underline">#{s.number}</Link>
                   </td>
                   <td className="table-cell text-white/50 text-xs">{formatDate(s.createdAt)}</td>
                   <td className="table-cell text-right font-semibold text-white">{formatCurrency(s.total)}</td>
@@ -182,7 +184,7 @@ export default function ClientDetailPage() {
       )}
 
       {tab === 'services' && (
-        <div className="glass-card overflow-hidden">
+        <div className="card overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -194,10 +196,12 @@ export default function ClientDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {history.services.map(s => (
+              {history.services.length === 0 ? (
+                <tr><td colSpan={5} className="py-8 text-center text-sm text-white/30">Nenhum serviço registrado</td></tr>
+              ) : history.services.map(s => (
                 <tr key={s.id} className="table-row">
                   <td className="table-cell">
-                    <Link to={`/services/${s.id}`} className="text-brand-400 font-mono hover:underline">#{s.number}</Link>
+                    <Link to={`/services/${s.id}`} className="text-brand-500 font-mono hover:underline">#{s.number}</Link>
                   </td>
                   <td className="table-cell text-white/70">{s.type}</td>
                   <td className="table-cell hidden md:table-cell text-white/40 text-xs">{formatDate(s.createdAt)}</td>
