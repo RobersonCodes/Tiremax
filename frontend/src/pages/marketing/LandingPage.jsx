@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { CustomCursor } from '../../components/marketing/CustomCursor'
 import { ScrollProgress } from '../../components/marketing/ScrollProgress'
 import { ProductVisual } from '../../components/marketing/ProductVisual'
+import { HeroCarousel } from '../../components/marketing/HeroCarousel'
 
 const FEATURES = [
   {
@@ -60,6 +61,7 @@ function Hero() {
 
   return (
     <section ref={ref} className="relative overflow-hidden">
+      <HeroCarousel />
       <motion.div style={{ y: bgY }} className="pointer-events-none absolute inset-0">
         <motion.div
           animate={{ opacity: [0.5, 0.8, 0.5], scale: [1, 1.08, 1] }}
