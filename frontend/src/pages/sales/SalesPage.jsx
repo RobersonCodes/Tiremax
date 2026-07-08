@@ -1,10 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, ShoppingCart, ChevronRight, Search } from 'lucide-react'
+import { Plus, ShoppingCart, ChevronRight } from 'lucide-react'
 import api from '../../services/api'
-import { PageHeader, StatusBadge, Pagination, Skeleton, EmptyState } from '../../components/ui/index'
+import { PageHeader, StatusBadge, Pagination, Skeleton, EmptyState, Button } from '../../components/ui/index'
 import { formatCurrency, formatDateTime } from '../../utils/format'
+
+const FILTERS = [
+  { value: '', label: 'Todas' },
+  { value: 'COMPLETED', label: 'Concluídas' },
+  { value: 'PENDING', label: 'Pendentes' },
+  { value: 'CANCELLED', label: 'Canceladas' },
+]
 
 export default function SalesPage() {
   const navigate = useNavigate()
@@ -34,28 +41,28 @@ export default function SalesPage() {
         title="Vendas"
         subtitle={`${total} vendas registradas`}
         actions={
-          <Link to="/sales/new" className="btn-primary flex items-center gap-2 text-sm">
-            <Plus size={16} /> Nova Venda (PDV)
+          <Link to="/sales/new">
+            <Button icon={Plus}>Nova Venda (PDV)</Button>
           </Link>
         }
       />
 
       {/* Filters */}
-      <div className="glass-card p-4 flex flex-wrap gap-2">
-        {['', 'COMPLETED', 'PENDING', 'CANCELLED'].map(s => (
+      <div className="card p-4 flex flex-wrap gap-2">
+        {FILTERS.map(f => (
           <button
-            key={s}
-            onClick={() => { setStatusFilter(s); setPage(1) }}
-            className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
-              statusFilter === s ? 'bg-brand-600 text-white' : 'bg-surface-600/50 text-white/40 hover:text-white/70'
+            key={f.value}
+            onClick={() => { setStatusFilter(f.value); setPage(1) }}
+            className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out-expo ${
+              statusFilter === f.value ? 'bg-brand-500 text-[#08090a] font-semibold' : 'bg-surface-700 text-white/40 hover:text-white/70'
             }`}
           >
-            {s === '' ? 'Todas' : s === 'COMPLETED' ? 'Concluídas' : s === 'PENDING' ? 'Pendentes' : 'Canceladas'}
+            {f.label}
           </button>
         ))}
       </div>
 
-      <div className="glass-card overflow-hidden">
+      <div className="card overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/[0.05]">
@@ -77,14 +84,14 @@ export default function SalesPage() {
                 ))}
               </tr>
             )) : sales.length === 0 ? (
-              <tr><td colSpan={8} className="py-16">
+              <tr><td colSpan={8} className="py-4">
                 <EmptyState icon={ShoppingCart} title="Nenhuma venda encontrada" description="As vendas aparecerão aqui após serem registradas no PDV"
-                  action={<Link to="/sales/new" className="btn-primary text-sm flex items-center gap-2 mx-auto"><Plus size={14} /> Nova Venda</Link>} />
+                  action={<Link to="/sales/new"><Button size="sm" icon={Plus}>Nova Venda</Button></Link>} />
               </td></tr>
             ) : sales.map((sale, i) => (
               <motion.tr key={sale.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-                className="table-row cursor-pointer" onClick={() => navigate(`/sales/${sale.id}`)}>
-                <td className="table-cell"><span className="font-mono text-brand-400 text-sm">#{sale.number}</span></td>
+                className="table-row" onClick={() => navigate(`/sales/${sale.id}`)}>
+                <td className="table-cell"><span className="font-mono text-brand-500 text-sm">#{sale.number}</span></td>
                 <td className="table-cell text-white/80 text-sm">{sale.client?.name || '— Avulso'}</td>
                 <td className="table-cell hidden md:table-cell text-white/50 text-sm">{sale.user?.name}</td>
                 <td className="table-cell hidden lg:table-cell">

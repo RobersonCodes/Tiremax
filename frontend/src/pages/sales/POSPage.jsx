@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Plus, Minus, Trash2, ShoppingCart, User, ArrowLeft, CheckCircle, Tag, CreditCard } from 'lucide-react'
+import { Search, Plus, Minus, Trash2, ShoppingCart, User, ArrowLeft, CheckCircle, Tag, CreditCard, X } from 'lucide-react'
 import api from '../../services/api'
+import { Button, Input } from '../../components/ui/index'
 import { formatCurrency } from '../../utils/format'
 import toast from 'react-hot-toast'
 
@@ -102,8 +103,8 @@ export default function POSPage() {
           <h2 className="text-2xl font-display font-bold text-white">Venda Concluída!</h2>
           <p className="text-white/50">Venda #{completed.number} · {formatCurrency(completed.total)}</p>
           <div className="flex gap-3 justify-center mt-6">
-            <button onClick={() => navigate('/sales')} className="btn-secondary">Ver Vendas</button>
-            <button onClick={() => { setCart([]); setCompleted(null); setSelectedClient(null); setDiscount(0) }} className="btn-primary">Nova Venda</button>
+            <Button variant="secondary" onClick={() => navigate('/sales')}>Ver Vendas</Button>
+            <Button onClick={() => { setCart([]); setCompleted(null); setSelectedClient(null); setDiscount(0) }}>Nova Venda</Button>
           </div>
         </motion.div>
       </div>
@@ -113,7 +114,7 @@ export default function POSPage() {
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="btn-ghost p-2"><ArrowLeft size={18} /></button>
+        <Button variant="ghost" size="md" onClick={() => navigate(-1)} className="!px-2"><ArrowLeft size={18} /></Button>
         <div>
           <h1 className="text-xl font-display font-bold text-white">PDV — Ponto de Venda</h1>
           <p className="text-xs text-white/35">Registre vendas rapidamente</p>
@@ -124,23 +125,14 @@ export default function POSPage() {
         {/* Left — Product search + cart */}
         <div className="lg:col-span-3 space-y-4">
           {/* Product search */}
-          <div className="glass-card p-4">
+          <div className="card p-4">
             <label className="label">Buscar Produto</label>
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-              <input
-                ref={searchRef}
-                value={productSearch}
-                onChange={e => setProductSearch(e.target.value)}
-                className="input-field pl-9"
-                placeholder="Código, nome, marca..."
-                autoFocus
-              />
-            </div>
+            <Input ref={searchRef} icon={Search} value={productSearch} onChange={e => setProductSearch(e.target.value)}
+              placeholder="Código, nome, marca..." autoFocus />
             <AnimatePresence>
               {productResults.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="mt-2 bg-surface-600 border border-white/10 rounded-xl overflow-hidden">
+                  className="mt-2 bg-surface-700 border border-white/10 rounded-xl overflow-hidden">
                   {productResults.map(p => (
                     <button key={p.id} onClick={() => addToCart(p)}
                       className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/[0.05] last:border-0 text-left">
@@ -160,11 +152,11 @@ export default function POSPage() {
           </div>
 
           {/* Cart */}
-          <div className="glass-card overflow-hidden">
+          <div className="card overflow-hidden">
             <div className="p-4 border-b border-white/[0.05] flex items-center justify-between">
               <h3 className="font-display font-semibold text-white flex items-center gap-2">
-                <ShoppingCart size={18} className="text-brand-400" />
-                Carrinho <span className="text-brand-400 text-sm">({cart.length})</span>
+                <ShoppingCart size={18} className="text-brand-500" />
+                Carrinho <span className="text-brand-500 text-sm">({cart.length})</span>
               </h3>
               {cart.length > 0 && (
                 <button onClick={() => setCart([])} className="text-xs text-accent-red/60 hover:text-accent-red transition-colors">
@@ -213,25 +205,25 @@ export default function POSPage() {
         {/* Right — Order summary */}
         <div className="lg:col-span-2 space-y-4">
           {/* Client */}
-          <div className="glass-card p-4">
+          <div className="card p-4">
             <label className="label flex items-center gap-1.5"><User size={13} /> Cliente (Opcional)</label>
             {selectedClient ? (
-              <div className="flex items-center justify-between p-3 bg-brand-600/10 border border-brand-500/20 rounded-xl">
+              <div className="flex items-center justify-between p-3 bg-brand-500/10 border border-brand-500/15 rounded-xl">
                 <div>
                   <p className="text-sm font-medium text-white">{selectedClient.name}</p>
                   <p className="text-xs text-white/40">{selectedClient.phone}</p>
                 </div>
-                <button onClick={() => { setSelectedClient(null); setClientSearch('') }} className="text-white/30 hover:text-white/60 text-xs">✕</button>
+                <button onClick={() => { setSelectedClient(null); setClientSearch('') }} className="text-white/30 hover:text-white/60">
+                  <X size={14} />
+                </button>
               </div>
             ) : (
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                <input value={clientSearch} onChange={e => setClientSearch(e.target.value)}
-                  className="input-field pl-9" placeholder="Buscar cliente..." />
+                <Input icon={Search} value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Buscar cliente..." />
                 <AnimatePresence>
                   {clientResults.length > 0 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="absolute top-full mt-1 w-full bg-surface-600 border border-white/10 rounded-xl overflow-hidden z-20">
+                      className="absolute top-full mt-1 w-full bg-surface-700 border border-white/10 rounded-xl overflow-hidden z-20">
                       {clientResults.map(c => (
                         <button key={c.id} onClick={() => { setSelectedClient(c); setClientSearch(''); setClientResults([]) }}
                           className="w-full text-left px-3 py-2.5 hover:bg-white/5 border-b border-white/[0.05] last:border-0 transition-colors">
@@ -247,14 +239,14 @@ export default function POSPage() {
           </div>
 
           {/* Payment + discount */}
-          <div className="glass-card p-4 space-y-3">
+          <div className="card p-4 space-y-3">
             <div>
               <label className="label flex items-center gap-1.5"><CreditCard size={13} /> Forma de Pagamento</label>
               <div className="grid grid-cols-2 gap-2">
                 {PAYMENT_METHODS.map(m => (
                   <button key={m.value} onClick={() => setPaymentMethod(m.value)}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                      paymentMethod === m.value ? 'bg-brand-600 text-white' : 'bg-surface-600/50 text-white/50 hover:text-white/80'
+                    className={`px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ease-out-expo ${
+                      paymentMethod === m.value ? 'bg-brand-500 text-[#08090a] font-semibold' : 'bg-surface-700 text-white/50 hover:text-white/80'
                     }`}>
                     {m.label}
                   </button>
@@ -263,8 +255,8 @@ export default function POSPage() {
             </div>
             <div>
               <label className="label flex items-center gap-1.5"><Tag size={13} /> Desconto (R$)</label>
-              <input type="number" step="0.01" min={0} value={discount}
-                onChange={e => setDiscount(e.target.value)} className="input-field" placeholder="0,00" />
+              <Input type="number" step="0.01" min={0} value={discount}
+                onChange={e => setDiscount(e.target.value)} placeholder="0,00" />
             </div>
             <div>
               <label className="label">Observações</label>
@@ -274,7 +266,7 @@ export default function POSPage() {
           </div>
 
           {/* Totals */}
-          <div className="glass-card p-4">
+          <div className="card p-4">
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm text-white/60">
                 <span>Subtotal</span>
@@ -291,17 +283,16 @@ export default function POSPage() {
                 <span className="text-accent-green">{formatCurrency(total)}</span>
               </div>
             </div>
-            <button
+            <Button
               onClick={handleSubmit}
-              disabled={loading || cart.length === 0}
-              className="btn-primary w-full py-3 text-base flex items-center justify-center gap-2 disabled:opacity-40"
+              disabled={cart.length === 0}
+              loading={loading}
+              size="lg"
+              icon={CheckCircle}
+              className="w-full"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <><CheckCircle size={18} /> Finalizar Venda</>
-              )}
-            </button>
+              Finalizar Venda
+            </Button>
           </div>
         </div>
       </div>

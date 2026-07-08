@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Printer, XCircle, User, CreditCard, Package } from 'lucide-react'
 import api from '../../services/api'
-import { StatusBadge, Skeleton } from '../../components/ui/index'
-import { formatCurrency, formatDateTime, formatDocument } from '../../utils/format'
+import { StatusBadge, Skeleton, Card, Button } from '../../components/ui/index'
+import { formatCurrency, formatDateTime } from '../../utils/format'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -39,15 +39,11 @@ export default function SaleDetailPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="btn-ghost flex items-center gap-2 text-sm"><ArrowLeft size={16} /> Voltar</button>
+        <Button variant="ghost" icon={ArrowLeft} onClick={() => navigate(-1)}>Voltar</Button>
         <div className="flex gap-2">
-          <button onClick={() => window.print()} className="btn-secondary text-sm flex items-center gap-1.5">
-            <Printer size={15} /> Imprimir
-          </button>
+          <Button variant="secondary" icon={Printer} onClick={() => window.print()}>Imprimir</Button>
           {['ADMIN', 'FINANCIAL'].includes(user?.role) && sale.status !== 'CANCELLED' && (
-            <button onClick={handleCancel} disabled={cancelling} className="btn-danger text-sm flex items-center gap-1.5">
-              <XCircle size={15} /> Cancelar
-            </button>
+            <Button variant="danger" icon={XCircle} loading={cancelling} onClick={handleCancel}>Cancelar</Button>
           )}
         </div>
       </div>
@@ -55,7 +51,7 @@ export default function SaleDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           {/* Header */}
-          <div className="glass-card p-5">
+          <Card>
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h1 className="text-xl font-display font-bold text-white">Venda #{sale.number}</h1>
@@ -69,7 +65,7 @@ export default function SaleDetailPage() {
                 <div>
                   <p className="text-xs text-white/35">Cliente</p>
                   {sale.client ? (
-                    <Link to={`/clients/${sale.client.id}`} className="text-sm text-brand-300 hover:underline">{sale.client.name}</Link>
+                    <Link to={`/clients/${sale.client.id}`} className="text-sm text-brand-500 hover:underline">{sale.client.name}</Link>
                   ) : (
                     <p className="text-sm text-white/50">Venda Avulsa</p>
                   )}
@@ -83,12 +79,12 @@ export default function SaleDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Items */}
-          <div className="glass-card overflow-hidden">
+          <div className="card overflow-hidden">
             <div className="p-4 border-b border-white/[0.05] flex items-center gap-2">
-              <Package size={16} className="text-brand-400" />
+              <Package size={16} className="text-brand-500" />
               <h2 className="font-display font-semibold text-white">Itens</h2>
             </div>
             <table className="w-full">
@@ -119,7 +115,7 @@ export default function SaleDetailPage() {
 
         {/* Summary */}
         <div className="space-y-4">
-          <div className="glass-card p-5">
+          <Card>
             <h2 className="font-display font-semibold text-white mb-4">Resumo</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-white/60">
@@ -137,14 +133,14 @@ export default function SaleDetailPage() {
                 <span className="text-accent-green">{formatCurrency(sale.total)}</span>
               </div>
             </div>
-          </div>
+          </Card>
           {sale.notes && (
-            <div className="glass-card p-4">
+            <div className="card p-4">
               <p className="text-xs text-white/35 mb-1">Observações</p>
               <p className="text-sm text-white/70">{sale.notes}</p>
             </div>
           )}
-          <div className="glass-card p-4">
+          <div className="card p-4">
             <p className="text-xs text-white/35 mb-1">Operador</p>
             <p className="text-sm text-white">{sale.user?.name}</p>
           </div>
