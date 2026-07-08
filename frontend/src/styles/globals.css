@@ -3,89 +3,110 @@
 @tailwind utilities;
 
 @layer base {
-  * { @apply border-white/[0.05]; }
+  * { @apply border-white/[0.06]; }
   html { scroll-behavior: smooth; color-scheme: dark; }
   body {
-    @apply bg-[#0c0c0c] text-white font-sans;
+    @apply bg-[#0c0d0f] text-white font-sans antialiased;
     min-height: 100vh;
+    font-feature-settings: "cv11", "ss01";
   }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: #131313; }
-  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #f5c800; }
+
+  ::selection { background: theme('colors.brand.500'); color: #08090a; }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.brand.500');
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #292c33; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: theme('colors.brand.600'); }
 }
 
 @layer components {
-  /* Cards */
+  /* Cards — subtle depth instead of a flat fill; hover lifts a hair */
   .card {
-    @apply bg-[#131313] border border-white/[0.07] rounded-xl;
+    @apply bg-[#131417] border border-white/[0.06] rounded-xl shadow-depth;
   }
   .card-hover {
-    @apply card transition-all duration-200 hover:border-yellow-500/30 cursor-pointer;
+    @apply card transition-all duration-300 ease-out-expo hover:border-brand-500/25 hover:-translate-y-0.5 cursor-pointer;
   }
 
-  /* Buttons */
+  /* Buttons — same class names as before (13 pages rely on these),
+     refined weight/tracking/timing under the hood. */
   .btn-yellow {
-    @apply bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2;
-    font-family: 'Barlow Condensed', sans-serif;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    @apply bg-brand-500 hover:bg-brand-400 text-[#08090a] font-semibold px-4 py-2 rounded-lg
+           transition-all duration-200 ease-out-expo flex items-center gap-2 justify-center;
+    letter-spacing: 0.01em;
   }
-  .btn-yellow:hover { box-shadow: 0 4px 20px rgba(245,200,0,0.3); }
-  .btn-yellow:active { @apply scale-95; }
+  .btn-yellow:hover { box-shadow: 0 4px 20px rgba(240,180,0,0.28); }
+  .btn-yellow:active { @apply scale-[0.97]; }
 
   .btn-dark {
-    @apply bg-white/5 hover:bg-white/[0.08] border border-white/10 text-white/70 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-200;
+    @apply bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/75 hover:text-white
+           font-medium px-4 py-2 rounded-lg transition-all duration-200 ease-out-expo;
   }
   .btn-ghost {
-    @apply bg-transparent hover:bg-white/5 text-white/50 hover:text-white px-3 py-2 rounded-lg transition-all duration-200;
+    @apply bg-transparent hover:bg-white/[0.05] text-white/50 hover:text-white
+           px-3 py-2 rounded-lg transition-all duration-200 ease-out-expo;
   }
   .btn-danger {
-    @apply bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-lg transition-all duration-200;
+    @apply bg-red-500/10 hover:bg-red-500/[0.16] border border-red-500/20 text-red-400
+           px-4 py-2 rounded-lg transition-all duration-200 ease-out-expo;
   }
 
-  /* Input */
+  /* Inputs — clearer focus ring, consistent with the new brand ramp */
   .input-field {
-    @apply bg-[#1a1a1a] border border-white/[0.07] text-white placeholder-white/25 rounded-lg px-4 py-2.5 w-full text-sm;
-    @apply focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/40 transition-all duration-200;
+    @apply bg-[#191b1f] border border-white/[0.07] text-white placeholder-white/25 rounded-lg px-4 py-2.5 w-full text-sm;
+    @apply transition-all duration-200 ease-out-expo;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-500/35 focus:border-brand-500/40;
   }
   .label {
     @apply text-xs font-semibold text-white/40 uppercase tracking-wider mb-1.5 block;
   }
 
   /* Badges */
-  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold; }
-  .badge-success { @apply badge bg-green-500/10 text-green-400 border border-green-500/25; }
-  .badge-warning { @apply badge bg-yellow-400/10 text-yellow-400 border border-yellow-400/25; }
-  .badge-danger  { @apply badge bg-red-500/10 text-red-400 border border-red-500/25; }
-  .badge-info    { @apply badge bg-blue-500/10 text-blue-400 border border-blue-500/25; }
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+  .badge-success { @apply badge bg-green-500/10 text-green-400 border border-green-500/20; }
+  .badge-warning { @apply badge bg-brand-500/10 text-brand-400 border border-brand-500/20; }
+  .badge-danger  { @apply badge bg-red-500/10 text-red-400 border border-red-500/20; }
+  .badge-info    { @apply badge bg-blue-500/10 text-blue-400 border border-blue-500/20; }
   .badge-neutral { @apply badge bg-white/5 text-white/40 border border-white/10; }
 
-  /* Skeleton */
+  /* Skeleton — slower, subtler shimmer reads less "loading spinner",
+     more "content about to arrive" */
   .skeleton {
     @apply rounded-lg;
-    background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 100%);
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 100%);
     background-size: 200% 100%;
-    animation: skeleton 1.5s ease-in-out infinite;
+    animation: skeleton 2s ease-in-out infinite;
   }
 
   /* Sidebar */
   .sidebar-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 transition-all duration-200 cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/45
+           hover:text-white hover:bg-white/[0.04] transition-all duration-200 ease-out-expo cursor-pointer;
   }
   .sidebar-item-active {
-    @apply bg-yellow-400 text-black font-bold;
+    @apply bg-brand-500 text-[#08090a] font-semibold shadow-brand;
   }
 
   /* Table */
   .table-row { @apply border-b border-white/[0.05] hover:bg-white/[0.02] transition-colors duration-150 cursor-pointer; }
   .table-header { @apply text-xs font-semibold text-white/35 uppercase tracking-wider py-3 px-4; }
   .table-cell { @apply py-3 px-4 text-sm text-white/75; }
+
+  /* Glass — for overlays, modals, floating panels */
+  .glass-panel {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/[0.08];
+  }
 }
 
 @layer utilities {
-  .text-yellow { color: #f5c800; }
-  .border-yellow { border-color: #f5c800; }
+  .text-brand { color: theme('colors.brand.500'); }
+  .border-brand { border-color: theme('colors.brand.500'); }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
@@ -93,4 +114,13 @@
 @keyframes skeleton {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
