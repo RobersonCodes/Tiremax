@@ -23,7 +23,7 @@
 
 ---
 
-> **Nota de transparência**: esta reescrita corrigiu 3 inconsistências reais encontradas entre o README anterior e o código — não só texto, mas bugs de repositório. Ver [Correções aplicadas nesta revisão](#correções-aplicadas-nesta-revisão).
+> **Nota de transparência**: tinha bug de verdade escondido aqui, não só desatualização de texto — ver [Bugs corrigidos](#bugs-corrigidos).
 
 ## Sumário
 
@@ -38,7 +38,7 @@
 - [App mobile (Capacitor)](#-app-mobile-capacitor)
 - [Comparação com produtos consolidados](#comparação-com-produtos-consolidados)
 - [Roadmap](#roadmap)
-- [Correções aplicadas nesta revisão](#correções-aplicadas-nesta-revisão)
+- [Bugs corrigidos](#bugs-corrigidos)
 - [Licença](#-licença)
 
 ---
@@ -57,7 +57,7 @@
 | 📈 **Relatórios** | Gráficos de faturamento, análise de estoque |
 | 🧾 **Fiscal** | Estrutura de configuração para NFS-e — provedor **ainda não implementado** (ver nota abaixo) |
 
-> O módulo Fiscal expõe as variáveis de ambiente e o ponto de extensão (`backend/src/modules/fiscal/`), mas nenhum provedor de NFS-e está implementado ainda — é andaime, não recurso pronto. Corrigido nesta revisão para não prometer mais do que existe.
+> O módulo Fiscal expõe as variáveis de ambiente e o ponto de extensão (`backend/src/modules/fiscal/`), mas nenhum provedor de NFS-e está implementado ainda — é andaime, não recurso pronto.
 
 ---
 
@@ -336,7 +336,7 @@ Guias completos: [Android](./CAPACITOR_ANDROID.md) · [iOS](./CAPACITOR_IOS.md) 
 | Módulo fiscal | 🟡 Estrutura pronta, sem provedor implementado | ✅ Integração ativa |
 | App mobile | ✅ Android/iOS via Capacitor, mesma base | Varia |
 
-**O que falta para reduzir essa distância**: migrar o isolamento de tenant de convenção manual para garantia estrutural é o item que mais importa aqui — é uma questão de correção, não só de maturidade. Depois disso: testes automatizados (zero hoje), `helmet` + rate limiting, e decidir se o módulo fiscal vale a pena implementar de fato ou deve sair do README até ter um provedor real.
+O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Depois entram testes automatizados (zero hoje), `helmet` + rate limiting, e decidir se vale a pena implementar de fato um provedor de NFS-e ou tirar essa seção do README até ter um.
 
 ---
 
@@ -351,15 +351,15 @@ Guias completos: [Android](./CAPACITOR_ANDROID.md) · [iOS](./CAPACITOR_IOS.md) 
 
 ---
 
-## Correções aplicadas nesta revisão
+## Bugs corrigidos
 
-Esta reescrita não mudou só o texto — corrigiu bugs reais encontrados ao auditar o repositório:
+Fica registrado porque foi feio: o `docker-compose.yml` subia MySQL enquanto o `schema.prisma` e o `.env.example` sempre foram PostgreSQL — ou seja, `docker-compose up` derrubava a API na primeira query. Junto com isso:
 
-1. **`docker-compose.yml` subia o banco errado**: o serviço declarava `mysql:8.0`, mas `schema.prisma` e `.env.example` sempre foram PostgreSQL. Rodar `docker-compose up` derrubava a API na primeira query (`Prisma Client` gerado para `postgresql`, `DATABASE_URL` apontando para MySQL). Corrigido para um serviço `postgres:16-alpine` consistente com o schema real.
-2. **`.env.example` tinha 5 variáveis mortas** (`WHATSAPP_ENABLED`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `STORE_WHATSAPP`) de uma automação via WhatsApp que nunca existiu no código — confirmado por busca no repositório inteiro, zero ocorrências fora do `.env.example`. Removidas.
-3. **Licença alegada sem arquivo**: o README dizia "MIT © 2024" mas não existia `LICENSE` no repositório. Adicionado o arquivo.
-4. **`database.sql` na raiz era um script MySQL obsoleto**, sem tabelas reais, não referenciado por nenhuma ferramenta do projeto — a migração real vem do Prisma (`backend/prisma/migrations/`). Removido para não confundir quem abrir o repositório.
-5. **README documentava instalação com MySQL** (badge, `DATABASE_URL` de exemplo, seção de tecnologias) — corrigido para PostgreSQL em todas as ocorrências.
+1. **`docker-compose.yml` com o banco errado** — trocado o serviço `mysql:8.0` por `postgres:16-alpine`, consistente com o schema real.
+2. **`.env.example` com 5 variáveis mortas** (`WHATSAPP_ENABLED`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `STORE_WHATSAPP`) de uma automação via WhatsApp que nunca saiu do papel — zero ocorrências no resto do código. Removidas.
+3. **Licença alegada sem arquivo** — o README dizia "MIT © 2024" mas não existia `LICENSE` no repositório. Adicionado.
+4. **`database.sql` na raiz era um script MySQL avulso**, sem tabelas reais e sem nada referenciando ele — a migração de verdade vem do Prisma (`backend/prisma/migrations/`). Removido.
+5. **README documentava instalação com MySQL** (badge, `DATABASE_URL` de exemplo, seção de tecnologias) — atualizado pra PostgreSQL em todas as ocorrências.
 
 ---
 
