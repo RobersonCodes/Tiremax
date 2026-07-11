@@ -47,7 +47,8 @@
 
 | Módulo | Funcionalidades |
 |--------|----------------|
-| 🔐 **Auth** | Login JWT, controle de permissões (Admin/Funcionário/Financeiro) |
+| 🔐 **Auth** | Login JWT, controle de permissões (Admin/Funcionário/Financeiro), esqueci/redefinir senha por e-mail |
+| 👤 **Equipe** | Convite e gestão de usuários do tenant (ativar/desativar, trocar cargo) — só Admin |
 | 📊 **Dashboard** | Métricas em tempo real, gráfico de faturamento, estoque baixo |
 | 👥 **Clientes** | CRUD completo, busca dinâmica, histórico de compras e serviços |
 | 📦 **Estoque** | Pneus, peças, movimentações, alertas de estoque baixo |
@@ -55,9 +56,9 @@
 | 🔧 **Serviços** | Ordens de serviço, status, peças, mão de obra |
 | 💰 **Financeiro** | Contas a pagar/receber, fluxo de caixa |
 | 📈 **Relatórios** | Gráficos de faturamento, análise de estoque |
-| 🧾 **Fiscal** | Estrutura de configuração para NFS-e — provedor **ainda não implementado** (ver nota abaixo) |
+| 🧾 **Fiscal** | Emissão de NFC-e (venda) e NFS-e (serviço) via [Focus NFe](https://focusnfe.com.br/), com consulta de status assíncrona e cancelamento (ver nota abaixo) |
 
-> O módulo Fiscal expõe as variáveis de ambiente e o ponto de extensão (`backend/src/modules/fiscal/`), mas nenhum provedor de NFS-e está implementado ainda — é andaime, não recurso pronto.
+> O módulo Fiscal integra com a Focus NFe como provedor único (`backend/src/services/focusNfe.service.js`) — cada tenant cadastra sua própria empresa/certificado A1 no painel da Focus NFe antes de emitir. Ainda não é a abstração "um provedor por município" originalmente cogitada (`backend/src/modules/fiscal/`), é uma integração direta e pragmática com um único parceiro.
 
 ---
 
@@ -128,13 +129,17 @@ cd ../frontend
 npm install
 ```
 
-### 2. Configure o banco de dados
+### 2. Configure as variáveis de ambiente
 
 Edite `backend/.env`:
 ```env
 DATABASE_URL="postgresql://postgres:sua_senha@localhost:5432/tiremax_erp"
 JWT_SECRET="sua-chave-secreta-muito-segura"
 ```
+
+Opcionais, só necessárias para os recursos correspondentes (ver `backend/.env.example`):
+- `FRONTEND_URL` + `RESEND_API_KEY` / `EMAIL_FROM` — para o e-mail de redefinição de senha funcionar de verdade (sem isso o link é gerado, mas o e-mail não é enviado).
+- `FOCUS_NFE_TOKEN` — token da conta master na Focus NFe, necessário pra emitir nota fiscal.
 
 ### 3. Rode as migrations e seed
 
@@ -244,7 +249,7 @@ erDiagram
 | `sales` / `sale_items` | Vendas e itens |
 | `services` / `service_items` | Ordens de serviço e itens |
 | `stock_movements` | Histórico de movimentações |
-| `invoices` | Notas fiscais (NFS-e — estrutura, sem provedor implementado) |
+| `invoices` | Notas fiscais NFC-e/NFS-e — status, PDF/XML e referência na Focus NFe |
 | `payments` | Pagamentos de vendas |
 | `accounts_receivable` / `accounts_payable` | Contas a receber/pagar |
 
@@ -255,8 +260,11 @@ Constraints únicas por tenant bem pensadas: e-mail, placa de veículo, código 
 ## 🔌 API Endpoints
 
 ```
-POST   /api/auth/login
-GET    /api/auth/me
+POST   /api/auth/login             POST   /api/auth/forgot-password
+GET    /api/auth/me                POST   /api/auth/reset-password
+
+GET    /api/users              POST   /api/users
+GET    /api/users/:id          PUT    /api/users/:id       DELETE /api/users/:id
 
 GET    /api/dashboard/metrics
 GET    /api/dashboard/revenue-chart
@@ -286,6 +294,11 @@ PATCH  /api/financial/receivable/:id/pay
 GET    /api/financial/payable      POST   /api/financial/payable
 PATCH  /api/financial/payable/:id/pay
 GET    /api/financial/cashflow     GET    /api/financial/summary
+
+GET    /api/invoices               GET    /api/invoices/:id
+POST   /api/invoices/from-sale/:saleId       POST   /api/invoices/from-service/:serviceId
+POST   /api/invoices/issue/:id     GET    /api/invoices/:id/status
+POST   /api/invoices/cancel/:id
 ```
 
 ---
@@ -293,9 +306,9 @@ GET    /api/financial/cashflow     GET    /api/financial/summary
 ## 🎨 Design System
 
 - **Tema**: Dark mode profissional
-- **Fontes**: DM Sans (corpo) + Syne (display) + JetBrains Mono (código)
-- **Cores**: Azul brand (`#3b64ff`) + Cyan accent (`#06d6e8`)
-- **Componentes**: Glassmorphism, cards com glow, micro-animações
+- **Fontes**: Space Grotesk (display) + Inter (corpo) + JetBrains Mono (código)
+- **Cores**: Brand âmbar/dourado (`#f0b400`) sobre neutros escuros (`surface-950`…`surface-400`), com verde/vermelho/azul de apoio para status
+- **Componentes**: Set compartilhado em `frontend/src/components/ui/index.jsx` (`Button`, `Card`, `Table`, `StatusBadge`, `Modal`, `PageHeader`...) — migração em andamento, algumas páginas ainda usam classes antigas (ver `CLAUDE.md`)
 - **Responsivo**: Desktop, Tablet, Mobile
 
 ## 🛠️ Tecnologias
@@ -333,10 +346,10 @@ Guias completos: [Android](./CAPACITOR_ANDROID.md) · [iOS](./CAPACITOR_IOS.md) 
 | Testes automatizados | ❌ Nenhum ainda | ✅ |
 | CI/CD | ❌ Não configurado | ✅ |
 | Segurança HTTP (helmet, rate limit) | ❌ Ausente hoje | ✅ |
-| Módulo fiscal | 🟡 Estrutura pronta, sem provedor implementado | ✅ Integração ativa |
+| Módulo fiscal | 🟡 Focus NFe integrado (NFC-e/NFS-e), mas um único provedor, não abstração multi-município | ✅ Integração ativa |
 | App mobile | ✅ Android/iOS via Capacitor, mesma base | Varia |
 
-O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Depois entram testes automatizados (zero hoje), `helmet` + rate limiting, e decidir se vale a pena implementar de fato um provedor de NFS-e ou tirar essa seção do README até ter um.
+O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Depois entram testes automatizados (zero hoje) e `helmet` + rate limiting no backend.
 
 ---
 
@@ -346,7 +359,6 @@ O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual
 - [ ] Suíte de testes automatizados (zero hoje)
 - [ ] CI (lint + test) via GitHub Actions
 - [ ] `helmet` + rate limiting no backend
-- [ ] Decidir destino do módulo Fiscal: implementar um provedor de NFS-e real ou remover a seção até ter um
 - [ ] Changelog e releases versionadas
 
 ---
@@ -360,6 +372,9 @@ Fica registrado porque foi feio: o `docker-compose.yml` subia MySQL enquanto o `
 3. **Licença alegada sem arquivo** — o README dizia "MIT © 2024" mas não existia `LICENSE` no repositório. Adicionado.
 4. **`database.sql` na raiz era um script MySQL avulso**, sem tabelas reais e sem nada referenciando ele — a migração de verdade vem do Prisma (`backend/prisma/migrations/`). Removido.
 5. **README documentava instalação com MySQL** (badge, `DATABASE_URL` de exemplo, seção de tecnologias) — atualizado pra PostgreSQL em todas as ocorrências.
+6. **Migration faltante para o schema fiscal/invoice/reset de senha** — os campos novos em `tenants` (fiscal), `invoices` (`type`, `pdf_url`, `xml_url`, `focus_ref`, `error_message`) e `users` (`reset_token`, `reset_token_expiry`) tinham sido adicionados no `schema.prisma`, mas a migration correspondente nunca foi gerada. Como o `start.js` do Railway roda só `prisma migrate deploy` (aplica migrations existentes, não gera novas), o banco de produção ficou sem essas colunas até a migration ser criada e commitada.
+7. **`authorize('ADMIN', 'FINANCIAL')` removido sem querer nas rotas de nota fiscal** — no refactor pra Focus NFe, `invoice.routes.js` perdeu o middleware de permissão em `issue`/`cancel` (e nunca teve nas novas `from-sale`/`from-service`), permitindo que qualquer usuário autenticado do tenant emitisse ou cancelasse notas fiscais. Restaurado.
+8. **`npm run lint` do frontend nunca funcionou** — não existia `.eslintrc.cjs` (nem qualquer config) no repositório, então o comando falhava antes de analisar um único arquivo. Adicionada a config e corrigido o backlog de 44 problemas que ela revelou (catch vazios sem comentário, deps de hook faltando, imports mortos, aspas não escapadas em JSX).
 
 ---
 
