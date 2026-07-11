@@ -154,6 +154,60 @@ describe('Vazamento cross-tenant em PUT (regressão — findUnique sem tenantId 
   });
 });
 
+describe('Regressão — remove/updateStatus não respondem "sucesso" em recurso de outro tenant', () => {
+  let tenantA, tokenAdminA, tokenAdminB;
+
+  beforeEach(async () => {
+    tenantA = await createTenant({ name: 'Tenant A' });
+    const tenantB = await createTenant({ name: 'Tenant B' });
+    const adminA = await createUser(tenantA.id, { role: 'ADMIN', email: 'adminA@teste.com' });
+    const adminB = await createUser(tenantB.id, { role: 'ADMIN', email: 'adminB@teste.com' });
+    tokenAdminA = await loginAndGetToken(app, adminA.email, adminA.plainPassword);
+    tokenAdminB = await loginAndGetToken(app, adminB.email, adminB.plainPassword);
+  });
+
+  it('PATCH /api/services/:id/status em OS de outro tenant retorna 404 e não muda o status', async () => {
+    const client = await prisma.client.create({ data: { tenantId: tenantA.id, name: 'Cliente A' } });
+    const createdBy = await prisma.user.findFirst({ where: { tenantId: tenantA.id } });
+    const service = await prisma.service.create({
+      data: { tenantId: tenantA.id, number: 1, clientId: client.id, createdById: createdBy.id, type: 'Troca de Pneus', total: 100, status: 'OPEN' },
+    });
+
+    const res = await request(app)
+      .patch(`/api/services/${service.id}/status`)
+      .set('Authorization', `Bearer ${tokenAdminB}`)
+      .send({ status: 'COMPLETED' });
+    expect(res.status).toBe(404);
+
+    const stillOpen = await prisma.service.findUnique({ where: { id: service.id } });
+    expect(stillOpen.status).toBe('OPEN');
+  });
+
+  it('DELETE /api/services/:id de outro tenant retorna 404 e não cancela a OS', async () => {
+    const client = await prisma.client.create({ data: { tenantId: tenantA.id, name: 'Cliente A' } });
+    const createdBy = await prisma.user.findFirst({ where: { tenantId: tenantA.id } });
+    const service = await prisma.service.create({
+      data: { tenantId: tenantA.id, number: 1, clientId: client.id, createdById: createdBy.id, type: 'Troca de Pneus', total: 100, status: 'OPEN' },
+    });
+
+    const res = await request(app).delete(`/api/services/${service.id}`).set('Authorization', `Bearer ${tokenAdminB}`);
+    expect(res.status).toBe(404);
+
+    const stillOpen = await prisma.service.findUnique({ where: { id: service.id } });
+    expect(stillOpen.status).toBe('OPEN');
+  });
+
+  it('DELETE /api/users/:id de outro tenant retorna 404 e não desativa o usuário', async () => {
+    const otherUser = await createUser(tenantA.id, { email: 'protegido@teste.com' });
+
+    const res = await request(app).delete(`/api/users/${otherUser.id}`).set('Authorization', `Bearer ${tokenAdminB}`);
+    expect(res.status).toBe(404);
+
+    const stillActive = await prisma.user.findUnique({ where: { id: otherUser.id } });
+    expect(stillActive.active).toBe(true);
+  });
+});
+
 describe('Autorização nas rotas de nota fiscal (regressão do authorize() removido)', () => {
   it.each([
     ['post', '/api/invoices/from-sale/inexistente'],

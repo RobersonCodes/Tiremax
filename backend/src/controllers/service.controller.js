@@ -91,19 +91,19 @@ const updateStatus = async (req, res, next) => {
     const data = { status };
     if (status === 'COMPLETED') data.completedAt = new Date();
 
-    await prisma.service.updateMany({
+    const result = await prisma.service.updateMany({
       where: { id: req.params.id, tenantId: req.tenantId },
       data,
     });
+    if (!result.count) return res.status(404).json({ message: 'Ordem de serviço não encontrada' });
     res.json({ message: 'Status atualizado' });
   } catch (err) { next(err); }
 };
 
-
-
 const remove = async (req, res, next) => {
   try {
-    await prisma.service.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { status: 'CANCELLED' } });
+    const result = await prisma.service.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { status: 'CANCELLED' } });
+    if (!result.count) return res.status(404).json({ message: 'Ordem de serviço não encontrada' });
     res.json({ message: 'Ordem cancelada' });
   } catch (err) { next(err); }
 };

@@ -47,7 +47,8 @@ const update = async (req, res, next) => {
 
 const remove = async (req, res, next) => {
   try {
-    await prisma.user.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { active: false } });
+    const result = await prisma.user.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { active: false } });
+    if (!result.count) return res.status(404).json({ message: 'Usuário não encontrado' });
     res.json({ message: 'Usuário desativado' });
   } catch (err) { next(err); }
 };

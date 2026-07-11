@@ -42,7 +42,8 @@ const update = async (req, res, next) => {
 
 const remove = async (req, res, next) => {
   try {
-    await prisma.vehicle.deleteMany({ where: { id: req.params.id, tenantId: req.tenantId } });
+    const result = await prisma.vehicle.deleteMany({ where: { id: req.params.id, tenantId: req.tenantId } });
+    if (!result.count) return res.status(404).json({ message: 'Veículo não encontrado' });
     res.json({ message: 'Veículo removido' });
   } catch (err) { next(err); }
 };

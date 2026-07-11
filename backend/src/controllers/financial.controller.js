@@ -29,7 +29,8 @@ const payReceivable = async (req, res, next) => {
 
 const deleteReceivable = async (req, res, next) => {
   try {
-    await prisma.accountReceivable.deleteMany({ where: { id: req.params.id, tenantId: req.tenantId } });
+    const result = await prisma.accountReceivable.deleteMany({ where: { id: req.params.id, tenantId: req.tenantId } });
+    if (!result.count) return res.status(404).json({ message: 'Registro não encontrado' });
     res.json({ message: 'Removido' });
   } catch (err) { next(err); }
 };
@@ -63,7 +64,8 @@ const payPayable = async (req, res, next) => {
 
 const deletePayable = async (req, res, next) => {
   try {
-    await prisma.accountPayable.deleteMany({ where: { id: req.params.id, tenantId: req.tenantId } });
+    const result = await prisma.accountPayable.deleteMany({ where: { id: req.params.id, tenantId: req.tenantId } });
+    if (!result.count) return res.status(404).json({ message: 'Registro não encontrado' });
     res.json({ message: 'Removido' });
   } catch (err) { next(err); }
 };
