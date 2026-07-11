@@ -78,6 +78,50 @@ describe('Notas fiscais', () => {
       expect(res.status).toBe(201);
       expect(res.body.type).toBe('NFSE');
     });
+
+    it('é idempotente — chamar de novo retorna a mesma invoice, não cria outra', async () => {
+      const service = await prisma.service.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, createdById: userA.id, type: 'Troca de Pneus', total: 150 },
+      });
+
+      const first = await request(app).post(`/api/invoices/from-service/${service.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+      const second = await request(app).post(`/api/invoices/from-service/${service.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+
+      expect(second.status).toBe(200);
+      expect(second.body.id).toBe(first.body.id);
+      const count = await prisma.invoice.count({ where: { serviceId: service.id } });
+      expect(count).toBe(1);
+    });
+
+    it('retorna 404 para OS de outro tenant', async () => {
+      const tenantB = await createTenant({ name: 'Tenant B' });
+      const userB = await createUser(tenantB.id, { role: 'ADMIN', email: 'adminB2@teste.com' });
+      const clientB = await prisma.client.create({ data: { tenantId: tenantB.id, name: 'Cliente B' } });
+      const serviceB = await prisma.service.create({
+        data: { tenantId: tenantB.id, number: 1, clientId: clientB.id, createdById: userB.id, type: 'Alinhamento', total: 80 },
+      });
+
+      const res = await request(app).post(`/api/invoices/from-service/${serviceB.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('GET /api/invoices e /api/invoices/:id', () => {
+    it('lista e busca notas do próprio tenant normalmente', async () => {
+      const sale = await prisma.sale.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantA.id, saleId: sale.id, clientId: clientA.id, type: 'NFCE', amount: 100, status: 'DRAFT' },
+      });
+
+      const list = await request(app).get('/api/invoices').set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(list.body.find(i => i.id === invoice.id)).toBeDefined();
+
+      const one = await request(app).get(`/api/invoices/${invoice.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(one.status).toBe(200);
+      expect(one.body.id).toBe(invoice.id);
+    });
   });
 
   describe('POST /api/invoices/issue/:id', () => {
@@ -95,6 +139,74 @@ describe('Notas fiscais', () => {
 
       const res = await request(app).post(`/api/invoices/issue/${invoice.id}`).set('Authorization', `Bearer ${tokenSemFiscal}`);
       expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/CNPJ/);
+      expect(focusNfe.issueNFCe).not.toHaveBeenCalled();
+    });
+
+    it('recusa emitir com CNPJ configurado mas fiscal desabilitado (mensagem diferente)', async () => {
+      const tenantFiscalOff = await createTenant({ name: 'Fiscal Off', cnpj: '11222333000181', fiscalEnabled: false });
+      const userFiscalOff = await createUser(tenantFiscalOff.id, { role: 'ADMIN', email: 'fiscaloff@teste.com' });
+      const tokenFiscalOff = await loginAndGetToken(app, userFiscalOff.email, userFiscalOff.plainPassword);
+      const clientFiscalOff = await prisma.client.create({ data: { tenantId: tenantFiscalOff.id, name: 'Cliente' } });
+      const sale = await prisma.sale.create({
+        data: { tenantId: tenantFiscalOff.id, number: 1, clientId: clientFiscalOff.id, userId: userFiscalOff.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantFiscalOff.id, saleId: sale.id, clientId: clientFiscalOff.id, type: 'NFCE', amount: 100, status: 'DRAFT' },
+      });
+
+      const res = await request(app).post(`/api/invoices/issue/${invoice.id}`).set('Authorization', `Bearer ${tokenFiscalOff}`);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/habilitada/);
+    });
+
+    it('retorna 404 pra invoice inexistente', async () => {
+      const res = await request(app).post('/api/invoices/issue/nao-existe').set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('retorna 404 pra invoice de outro tenant, mesmo sendo ADMIN', async () => {
+      const tenantB = await createTenant({ name: 'Tenant B', cnpj: '11222333000181', fiscalEnabled: true });
+      const userB = await createUser(tenantB.id, { role: 'ADMIN', email: 'adminB3@teste.com' });
+      const clientB = await prisma.client.create({ data: { tenantId: tenantB.id, name: 'Cliente B' } });
+      const saleB = await prisma.sale.create({
+        data: { tenantId: tenantB.id, number: 1, clientId: clientB.id, userId: userB.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoiceB = await prisma.invoice.create({
+        data: { tenantId: tenantB.id, saleId: saleB.id, clientId: clientB.id, type: 'NFCE', amount: 100, status: 'DRAFT' },
+      });
+
+      const res = await request(app).post(`/api/invoices/issue/${invoiceB.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(404);
+      expect(focusNfe.issueNFCe).not.toHaveBeenCalled();
+    });
+
+    it('invoice já ISSUED retorna direto, sem chamar a Focus NFe de novo', async () => {
+      const sale = await prisma.sale.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantA.id, saleId: sale.id, clientId: clientA.id, type: 'NFCE', amount: 100, status: 'ISSUED' },
+      });
+
+      const res = await request(app).post(`/api/invoices/issue/${invoice.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('ISSUED');
+      expect(focusNfe.issueNFCe).not.toHaveBeenCalled();
+    });
+
+    it('emite NFSE (a partir de OS) chamando issueNFSe, não issueNFCe', async () => {
+      const service = await prisma.service.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, createdById: userA.id, type: 'Troca de Pneus', total: 150 },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantA.id, serviceId: service.id, clientId: clientA.id, type: 'NFSE', amount: 150, status: 'DRAFT' },
+      });
+      focusNfe.issueNFSe.mockResolvedValue({ status: 'processando_autorizacao' });
+
+      const res = await request(app).post(`/api/invoices/issue/${invoice.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(200);
+      expect(focusNfe.issueNFSe).toHaveBeenCalledTimes(1);
       expect(focusNfe.issueNFCe).not.toHaveBeenCalled();
     });
 
@@ -131,6 +243,39 @@ describe('Notas fiscais', () => {
   });
 
   describe('GET /api/invoices/:id/status', () => {
+    it('retorna 404 pra invoice inexistente', async () => {
+      const res = await request(app).get('/api/invoices/nao-existe/status').set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('não chama a Focus NFe se a invoice não está PROCESSING', async () => {
+      const sale = await prisma.sale.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantA.id, saleId: sale.id, clientId: clientA.id, type: 'NFCE', amount: 100, status: 'DRAFT' },
+      });
+
+      const res = await request(app).get(`/api/invoices/${invoice.id}/status`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('DRAFT');
+      expect(focusNfe.checkStatus).not.toHaveBeenCalled();
+    });
+
+    it('mantém PROCESSING quando a Focus NFe ainda está processando', async () => {
+      const sale = await prisma.sale.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantA.id, saleId: sale.id, clientId: clientA.id, type: 'NFCE', amount: 100, status: 'PROCESSING' },
+      });
+      focusNfe.checkStatus.mockResolvedValue({ status: 'processando_autorizacao' });
+
+      const res = await request(app).get(`/api/invoices/${invoice.id}/status`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('PROCESSING');
+    });
+
     it('atualiza pra ISSUED quando a Focus NFe retorna autorizado', async () => {
       const sale = await prisma.sale.create({
         data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
@@ -162,6 +307,41 @@ describe('Notas fiscais', () => {
   });
 
   describe('POST /api/invoices/cancel/:id', () => {
+    it('retorna 404 pra invoice inexistente', async () => {
+      const res = await request(app).post('/api/invoices/cancel/nao-existe').set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('usa justificativa padrão quando não informada', async () => {
+      const sale = await prisma.sale.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantA.id, saleId: sale.id, clientId: clientA.id, type: 'NFCE', amount: 100, status: 'ISSUED' },
+      });
+      focusNfe.cancel.mockResolvedValue({ status: 'cancelado' });
+
+      await request(app).post(`/api/invoices/cancel/${invoice.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+
+      expect(focusNfe.cancel).toHaveBeenCalledWith(expect.objectContaining({ justificativa: 'Cancelamento solicitado pelo estabelecimento' }));
+    });
+
+    it('quando a Focus NFe recusa o cancelamento, mantém a invoice ISSUED', async () => {
+      const sale = await prisma.sale.create({
+        data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
+      });
+      const invoice = await prisma.invoice.create({
+        data: { tenantId: tenantA.id, saleId: sale.id, clientId: clientA.id, type: 'NFCE', amount: 100, status: 'ISSUED' },
+      });
+      focusNfe.cancel.mockRejectedValue(Object.assign(new Error('Prazo de cancelamento expirado'), { response: { data: { mensagem: 'Prazo de cancelamento expirado' } } }));
+
+      const res = await request(app).post(`/api/invoices/cancel/${invoice.id}`).set('Authorization', `Bearer ${tokenAdminA}`);
+      expect(res.status).toBe(422);
+
+      const stillIssued = await prisma.invoice.findUnique({ where: { id: invoice.id } });
+      expect(stillIssued.status).toBe('ISSUED');
+    });
+
     it('só cancela invoice já emitida (ISSUED)', async () => {
       const sale = await prisma.sale.create({
         data: { tenantId: tenantA.id, number: 1, clientId: clientA.id, userId: userA.id, status: 'COMPLETED', subtotal: 100, total: 100, paymentMethod: 'CASH' },
