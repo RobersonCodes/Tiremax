@@ -27,7 +27,7 @@ const createMovement = async (req, res, next) => {
     const movement = await prisma.$transaction(async (tx) => {
       // Verifica se produto pertence ao tenant
       const product = await tx.product.findFirst({ where: { id: productId, tenantId: req.tenantId } });
-      if (!product) throw new Error('Produto não encontrado');
+      if (!product) throw Object.assign(new Error('Produto não encontrado'), { statusCode: 404 });
 
       const mov = await tx.stockMovement.create({
         data: { tenantId: req.tenantId, productId, type, quantity: Number(quantity), reason, reference, unitCost, notes },
