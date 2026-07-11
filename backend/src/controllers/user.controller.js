@@ -39,7 +39,8 @@ const update = async (req, res, next) => {
   try {
     const { password, ...data } = req.body;
     if (password) data.password = await bcrypt.hash(password, 10);
-    await prisma.user.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data });
+    const result = await prisma.user.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data });
+    if (!result.count) return res.status(404).json({ message: 'Usuário não encontrado' });
     res.json(await prisma.user.findUnique({ where: { id: req.params.id }, select: { id: true, name: true, email: true, role: true, phone: true, active: true } }));
   } catch (err) { next(err); }
 };

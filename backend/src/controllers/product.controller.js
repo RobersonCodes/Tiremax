@@ -61,14 +61,16 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    await prisma.product.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: req.body });
+    const result = await prisma.product.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: req.body });
+    if (!result.count) return res.status(404).json({ message: 'Produto não encontrado' });
     res.json(await prisma.product.findUnique({ where: { id: req.params.id } }));
   } catch (err) { next(err); }
 };
 
 const remove = async (req, res, next) => {
   try {
-    await prisma.product.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { active: false } });
+    const result = await prisma.product.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { active: false } });
+    if (!result.count) return res.status(404).json({ message: 'Produto não encontrado' });
     res.json({ message: 'Produto desativado' });
   } catch (err) { next(err); }
 };

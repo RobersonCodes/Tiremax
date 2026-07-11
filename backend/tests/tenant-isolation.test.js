@@ -90,6 +90,70 @@ describe('Isolamento de tenant', () => {
   });
 });
 
+describe('Vazamento cross-tenant em PUT (regressão — findUnique sem tenantId após updateMany)', () => {
+  // client.controller.js já tinha a checagem de .count; product/vehicle/service/user
+  // faziam updateMany (não escrevia nada em ID de outro tenant) e depois um
+  // findUnique SEM tenantId — se o updateMany não casasse nenhuma linha, a resposta
+  // ainda devolvia os dados completos do registro do outro tenant.
+  let tenantA, tenantB, tokenAdminA, tokenAdminB;
+
+  beforeEach(async () => {
+    tenantA = await createTenant({ name: 'Tenant A' });
+    tenantB = await createTenant({ name: 'Tenant B' });
+    const adminA = await createUser(tenantA.id, { role: 'ADMIN', email: 'adminA@teste.com' });
+    const adminB = await createUser(tenantB.id, { role: 'ADMIN', email: 'adminB@teste.com' });
+    tokenAdminA = await loginAndGetToken(app, adminA.email, adminA.plainPassword);
+    tokenAdminB = await loginAndGetToken(app, adminB.email, adminB.plainPassword);
+  });
+
+  it('PUT /api/vehicles/:id de outro tenant retorna 404 e não vaza a placa/cliente', async () => {
+    const client = await prisma.client.create({ data: { tenantId: tenantA.id, name: 'Cliente A' } });
+    const vehicle = await prisma.vehicle.create({
+      data: { tenantId: tenantA.id, clientId: client.id, plate: 'SIGILO1', brand: 'Fiat', model: 'Uno', year: 2020 },
+    });
+
+    const res = await request(app)
+      .put(`/api/vehicles/${vehicle.id}`)
+      .set('Authorization', `Bearer ${tokenAdminB}`)
+      .send({ model: 'Modificado' });
+
+    expect(res.status).toBe(404);
+    expect(JSON.stringify(res.body)).not.toContain('SIGILO1');
+  });
+
+  it('PUT /api/services/:id de outro tenant retorna 404 e não vaza o cliente vinculado', async () => {
+    const client = await prisma.client.create({ data: { tenantId: tenantA.id, name: 'Cliente Sigiloso Service' } });
+    const createdBy = await prisma.user.findFirst({ where: { tenantId: tenantA.id } });
+    const service = await prisma.service.create({
+      data: {
+        tenantId: tenantA.id, number: 1, clientId: client.id, createdById: createdBy.id,
+        type: 'Troca de Pneus', total: 100,
+      },
+    });
+
+    const res = await request(app)
+      .put(`/api/services/${service.id}`)
+      .set('Authorization', `Bearer ${tokenAdminB}`)
+      .send({ description: 'Modificado' });
+
+    expect(res.status).toBe(404);
+    expect(JSON.stringify(res.body)).not.toContain('Cliente Sigiloso Service');
+  });
+
+  it('PUT /api/users/:id de outro tenant retorna 404 e não vaza nome/email', async () => {
+    const otherUser = await createUser(tenantA.id, { email: 'sigiloso@teste.com', name: 'Nome Sigiloso' });
+
+    const res = await request(app)
+      .put(`/api/users/${otherUser.id}`)
+      .set('Authorization', `Bearer ${tokenAdminB}`)
+      .send({ name: 'Modificado pelo invasor' });
+
+    expect(res.status).toBe(404);
+    expect(JSON.stringify(res.body)).not.toContain('sigiloso@teste.com');
+    expect(JSON.stringify(res.body)).not.toContain('Nome Sigiloso');
+  });
+});
+
 describe('Autorização nas rotas de nota fiscal (regressão do authorize() removido)', () => {
   it.each([
     ['post', '/api/invoices/from-sale/inexistente'],

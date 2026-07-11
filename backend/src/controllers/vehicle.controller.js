@@ -34,7 +34,8 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    await prisma.vehicle.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: req.body });
+    const result = await prisma.vehicle.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: req.body });
+    if (!result.count) return res.status(404).json({ message: 'Veículo não encontrado' });
     res.json(await prisma.vehicle.findUnique({ where: { id: req.params.id } }));
   } catch (err) { next(err); }
 };

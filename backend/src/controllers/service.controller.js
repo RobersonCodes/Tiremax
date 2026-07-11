@@ -73,10 +73,11 @@ const create = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const { items, ...data } = req.body;
-    await prisma.service.updateMany({
+    const result = await prisma.service.updateMany({
       where: { id: req.params.id, tenantId: req.tenantId },
       data,
     });
+    if (!result.count) return res.status(404).json({ message: 'Ordem de serviço não encontrada' });
     res.json(await prisma.service.findUnique({
       where: { id: req.params.id },
       include: { items: true, client: true, vehicle: true },

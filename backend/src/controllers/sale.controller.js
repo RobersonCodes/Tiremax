@@ -127,20 +127,20 @@ const create = async (req, res, next) => {
 
 const cancel = async (req, res, next) => {
   try {
-    await prisma.sale.updateMany({
+    const result = await prisma.sale.updateMany({
       where: { id: req.params.id, tenantId: req.tenantId },
       data: { status: 'CANCELLED' },
     });
+    if (!result.count) return res.status(404).json({ message: 'Venda não encontrada' });
     res.json({ message: 'Venda cancelada' });
   } catch (err) { next(err); }
 };
 
-
-
 const updateStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
-    await prisma.sale.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { status } });
+    const result = await prisma.sale.updateMany({ where: { id: req.params.id, tenantId: req.tenantId }, data: { status } });
+    if (!result.count) return res.status(404).json({ message: 'Venda não encontrada' });
     res.json({ message: 'Status atualizado' });
   } catch (err) { next(err); }
 };
