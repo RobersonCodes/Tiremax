@@ -1,23 +1,22 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: tiremax-mysql
+  postgres:
+    image: postgres:16-alpine
+    container_name: tiremax-postgres
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: tiremax_root
-      MYSQL_DATABASE: tiremax_erp
-      MYSQL_USER: tiremax
-      MYSQL_PASSWORD: tiremax_pass
+      POSTGRES_DB: tiremax_erp
+      POSTGRES_USER: tiremax
+      POSTGRES_PASSWORD: tiremax_pass
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - tiremax-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U tiremax -d tiremax_erp"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,7 +28,7 @@ services:
     container_name: tiremax-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql://tiremax:tiremax_pass@mysql:3306/tiremax_erp
+      DATABASE_URL: postgresql://tiremax:tiremax_pass@postgres:5432/tiremax_erp
       JWT_SECRET: your-super-secret-key-change-me
       JWT_EXPIRES_IN: 7d
       PORT: 3001
@@ -38,7 +37,7 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     volumes:
       - ./backend/uploads:/app/uploads
@@ -61,7 +60,7 @@ services:
       - tiremax-net
 
 volumes:
-  mysql_data:
+  postgres_data:
 
 networks:
   tiremax-net:

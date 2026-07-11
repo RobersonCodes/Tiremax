@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Printer, XCircle, User, CreditCard, Package } from 'lucide-react'
 import api from '../../services/api'
 import { StatusBadge, Skeleton, Card, Button } from '../../components/ui/index'
+import { InvoiceAction } from '../../components/invoices/InvoiceAction'
 import { formatCurrency, formatDateTime } from '../../utils/format'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -41,6 +42,7 @@ export default function SaleDetailPage() {
       <div className="flex items-center justify-between">
         <Button variant="ghost" icon={ArrowLeft} onClick={() => navigate(-1)}>Voltar</Button>
         <div className="flex gap-2">
+          <InvoiceAction entityType="sale" entityId={sale.id} initialInvoice={sale.invoice} />
           <Button variant="secondary" icon={Printer} onClick={() => window.print()}>Imprimir</Button>
           {['ADMIN', 'FINANCIAL'].includes(user?.role) && sale.status !== 'CANCELLED' && (
             <Button variant="danger" icon={XCircle} loading={cancelling} onClick={handleCancel}>Cancelar</Button>

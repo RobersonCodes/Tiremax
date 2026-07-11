@@ -1,10 +1,10 @@
 import { Link, Navigate } from 'react-router-dom'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Capacitor } from '@capacitor/core'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import {
   ArrowRight, Users, ShoppingCart, Wrench, Package, DollarSign,
-  BarChart3, Check, Shield, Smartphone,
+  BarChart3, Check, Shield, Smartphone, Star, ChevronDown,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { CustomCursor } from '../../components/marketing/CustomCursor'
@@ -55,6 +55,88 @@ const TRUST_POINTS = [
   { icon: Check, text: '30 dias grátis, sem cartão de crédito' },
   { icon: Shield, text: 'Dados no seu próprio servidor' },
   { icon: Smartphone, text: 'Funciona em celular, tablet e computador' },
+]
+
+// ⚠️ PLACEHOLDER — troque pelos depoimentos reais dos seus primeiros clientes
+// assim que tiver. Nunca publique depoimento que não seja de um cliente real.
+const TESTIMONIALS = [
+  {
+    name: '[Nome do dono]',
+    business: '[Nome da borracharia] · [Cidade/UF]',
+    quote: '[Espaço para o depoimento real de um cliente — o que mudou no dia a dia dele depois do TireMax.]',
+  },
+  {
+    name: '[Nome do dono]',
+    business: '[Nome da borracharia] · [Cidade/UF]',
+    quote: '[Depoimento real. Peça pro cliente falar em número: tempo economizado, vendas a mais, estoque que não faltou mais.]',
+  },
+  {
+    name: '[Nome do dono]',
+    business: '[Nome da borracharia] · [Cidade/UF]',
+    quote: '[Depoimento real de outro cliente, de preferência de uma cidade diferente do primeiro.]',
+  },
+]
+
+// ⚠️ PLACEHOLDER — os valores e limites abaixo são exemplo. Defina os reais
+// antes de publicar (também usados em SuperAdminPage.jsx: TRIAL/STARTER/PRO/ENTERPRISE).
+const PRICING = [
+  {
+    plan: 'STARTER',
+    label: 'Starter',
+    price: 'R$ 00',
+    period: '/mês',
+    description: 'Pra quem está começando a organizar a borracharia.',
+    features: ['Até 1 usuário', 'Clientes e veículos ilimitados', 'PDV e ordens de serviço', 'Estoque com alerta de baixo estoque'],
+    cta: 'Começar grátis',
+    highlight: false,
+  },
+  {
+    plan: 'PRO',
+    label: 'Pro',
+    price: 'R$ 00',
+    period: '/mês',
+    description: 'Pra quem já tem equipe e quer controle financeiro completo.',
+    features: ['Até 5 usuários', 'Tudo do Starter', 'Financeiro completo (contas a pagar/receber)', 'Relatórios e dashboard em tempo real', 'Suporte prioritário'],
+    cta: 'Começar grátis',
+    highlight: true,
+  },
+  {
+    plan: 'ENTERPRISE',
+    label: 'Enterprise',
+    price: 'Sob consulta',
+    period: '',
+    description: 'Pra redes com mais de uma unidade.',
+    features: ['Usuários ilimitados', 'Tudo do Pro', 'Múltiplas unidades', 'Onboarding assistido', 'Suporte dedicado'],
+    cta: 'Falar com vendas',
+    highlight: false,
+  },
+]
+
+const FAQS = [
+  {
+    q: 'Preciso saber mexer bem em computador?',
+    a: 'Não. O TireMax foi feito para o dia a dia de uma borracharia — os cadastros de cliente, veículo e produto levam menos de 1 minuto cada, sem curva de aprendizado.',
+  },
+  {
+    q: 'Meus dados ficam seguros? E se eu quiser sair?',
+    a: 'Sim. Seus dados ficam no seu próprio servidor, isolados de outras empresas. Se decidir cancelar, você pode exportar tudo antes de sair — sem multa e sem letra miúda.',
+  },
+  {
+    q: 'E se eu não gostar depois dos 30 dias grátis?',
+    a: 'Você cancela quando quiser, direto no sistema, sem precisar ligar ou negociar com ninguém. Não pedimos cartão de crédito para começar o trial.',
+  },
+  {
+    q: 'Meu funcionário pode estragar alguma coisa no sistema?',
+    a: 'Não. Você controla o que cada funcionário pode ver e fazer — existem perfis de Administrador, Financeiro e Funcionário, cada um com permissões diferentes.',
+  },
+  {
+    q: 'Funciona sem internet boa na oficina?',
+    a: 'O sistema roda pelo navegador ou app e precisa de conexão para sincronizar. Recomendamos ao menos uma conexão básica de internet no local.',
+  },
+  {
+    q: 'Dá pra emitir nota fiscal pelo sistema?',
+    a: 'O módulo de nota fiscal está em desenvolvimento. Hoje o TireMax organiza clientes, estoque, ordens de serviço, vendas e financeiro — fale com o suporte para saber o status da emissão de NF-e.',
+  },
 ]
 
 const EASE = [0.16, 1, 0.3, 1]
@@ -156,6 +238,186 @@ function Hero() {
   )
 }
 
+function Testimonials() {
+  return (
+    <section className="border-t border-white/[0.06] py-20 sm:py-24">
+      <div className="mx-auto max-w-6xl px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-2xl text-center"
+        >
+          <h2 className="font-display text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">
+            Quem usa, não volta pro caderno
+          </h2>
+          <p className="mt-3 text-white/55">
+            Donos de borracharia real, usando o TireMax no dia a dia.
+          </p>
+        </motion.div>
+
+        <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          {TESTIMONIALS.map((t, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.5, delay: i * 0.09, ease: EASE }}
+              className="card p-6"
+            >
+              <div className="flex gap-0.5 text-yellow-400 mb-3">
+                {[...Array(5)].map((_, s) => <Star key={s} size={14} fill="currentColor" />)}
+              </div>
+              <p className="text-sm leading-relaxed text-white/70">"{t.quote}"</p>
+              <div className="mt-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-400/10 font-display font-bold text-yellow-400">
+                  {t.name.charAt(1)?.toUpperCase() || '?'}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">{t.name}</p>
+                  <p className="text-xs text-white/40">{t.business}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Pricing() {
+  return (
+    <section className="border-t border-white/[0.06] py-20 sm:py-24">
+      <div className="mx-auto max-w-6xl px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-2xl text-center"
+        >
+          <h2 className="font-display text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">
+            Menos que o custo de um pneu por mês
+          </h2>
+          <p className="mt-3 text-white/55">
+            Sem letra miúda. Cancele quando quiser, direto no sistema.
+          </p>
+        </motion.div>
+
+        <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {PRICING.map((p, i) => (
+            <motion.div
+              key={p.plan}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.5, delay: i * 0.09, ease: EASE }}
+              className={`card relative flex flex-col p-6 ${p.highlight ? 'border-yellow-400/50 shadow-[0_0_0_1px_rgba(245,200,0,0.2)]' : ''}`}
+            >
+              {p.highlight && (
+                <span className="badge-warning absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  Mais escolhido
+                </span>
+              )}
+              <h3 className="font-display text-lg font-bold uppercase tracking-wide">{p.label}</h3>
+              <p className="mt-1 text-sm text-white/50">{p.description}</p>
+              <div className="mt-5 flex items-baseline gap-1">
+                <span className="font-display text-3xl font-extrabold text-white">{p.price}</span>
+                {p.period && <span className="text-sm text-white/40">{p.period}</span>}
+              </div>
+              <ul className="mt-6 flex-1 space-y-2.5">
+                {p.features.map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-white/65">
+                    <Check size={15} className="mt-0.5 shrink-0 text-yellow-400" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/register"
+                data-cursor-hover
+                className={`mt-7 justify-center py-3 text-sm ${p.highlight ? 'btn-yellow' : 'btn-dark'}`}
+              >
+                {p.cta}
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function FAQItem({ faq, isOpen, onToggle }) {
+  return (
+    <div className="border-b border-white/[0.06] py-2">
+      <button
+        onClick={onToggle}
+        data-cursor-hover
+        className="flex w-full items-center justify-between gap-4 py-4 text-left"
+      >
+        <span className="font-display text-sm font-semibold uppercase tracking-wide text-white sm:text-base">
+          {faq.q}
+        </span>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 text-yellow-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: EASE }}
+            className="overflow-hidden"
+          >
+            <p className="pb-4 text-sm leading-relaxed text-white/55">{faq.a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function FAQ() {
+  const [openIndex, setOpenIndex] = useState(0)
+  return (
+    <section className="border-t border-white/[0.06] py-20 sm:py-24">
+      <div className="mx-auto max-w-3xl px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6 }}
+          className="text-center"
+        >
+          <h2 className="font-display text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">
+            Perguntas frequentes
+          </h2>
+          <p className="mt-3 text-white/55">
+            Se a sua dúvida não estiver aqui, fala com a gente antes de assinar.
+          </p>
+        </motion.div>
+
+        <div className="mt-10">
+          {FAQS.map((faq, i) => (
+            <FAQItem
+              key={faq.q}
+              faq={faq}
+              isOpen={openIndex === i}
+              onToggle={() => setOpenIndex(openIndex === i ? -1 : i)}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function LandingPage() {
   const { user, loading } = useAuth()
 
@@ -245,6 +507,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <Testimonials />
+      <Pricing />
+      <FAQ />
 
       <section className="relative overflow-hidden border-t border-white/[0.06] py-20 sm:py-24">
         <div

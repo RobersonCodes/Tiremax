@@ -26,6 +26,17 @@ model Tenant {
   plan         String   @default("TRIAL")
   status       String   @default("ACTIVE")
   trialEndsAt  DateTime? @map("trial_ends_at")
+
+  // ─── Config fiscal (emissão de nota via Focus NFe) ───
+  regimeTributario   String?  @map("regime_tributario") // MEI | SIMPLES_NACIONAL | LUCRO_PRESUMIDO | LUCRO_REAL
+  inscricaoMunicipal String?  @map("inscricao_municipal")
+  itemListaServico   String?  @map("item_lista_servico") // código LC 116 (ex: 14.01 p/ borracharia)
+  cnaeCode           String?  @map("cnae_code")
+  aliquotaIss        Float?   @map("aliquota_iss")
+  focusNfeEmpresaId  String?  @map("focus_nfe_empresa_id") // referência da empresa cadastrada no painel do Focus NFe
+  fiscalEnvironment  String   @default("homologacao") @map("fiscal_environment") // homologacao | producao
+  fiscalEnabled      Boolean  @default(false) @map("fiscal_enabled")
+
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -56,6 +67,8 @@ model User {
   avatar    String?
   phone     String?
   active    Boolean  @default(true)
+  resetToken       String?   @map("reset_token")
+  resetTokenExpiry DateTime? @map("reset_token_expiry")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -283,11 +296,16 @@ model Invoice {
   id        String    @id @default(uuid())
   tenantId  String    @map("tenant_id")
   number    String?
+  type      String    @default("NFSE") // NFSE | NFCE | NFE
   saleId    String?   @unique @map("sale_id")
   serviceId String?   @unique @map("service_id")
   clientId  String    @map("client_id")
-  status    String    @default("DRAFT")
+  status    String    @default("DRAFT") // DRAFT | PROCESSING | ISSUED | ERROR | CANCELLED
   amount    Float
+  focusRef      String?  @map("focus_ref")     // referência retornada pelo Focus NFe p/ consulta de status
+  pdfUrl        String?  @map("pdf_url")
+  xmlUrl        String?  @map("xml_url")
+  errorMessage  String?  @map("error_message")
   issueDate DateTime? @map("issue_date")
   dueDate   DateTime? @map("due_date")
   createdAt DateTime  @default(now()) @map("created_at")

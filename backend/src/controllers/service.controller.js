@@ -43,6 +43,7 @@ const findOne = async (req, res, next) => {
         createdBy: { select: { id: true, name: true } },
         assignedTo: { select: { id: true, name: true } },
         items: { include: { product: { select: { id: true, name: true, unit: true } } } },
+        invoice: true,
       },
     });
     if (!service) return res.status(404).json({ message: 'Ordem de serviço não encontrada' });

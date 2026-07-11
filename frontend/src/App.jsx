@@ -24,7 +24,10 @@ import NewServicePage from './pages/services/NewServicePage'
 import FinancialPage from './pages/financial/FinancialPage'
 import ReportsPage from './pages/reports/ReportsPage'
 import SettingsPage from './pages/settings/SettingsPage'
+import TeamPage from './pages/settings/TeamPage'
 import SuperAdminPage from './pages/admin/SuperAdminPage'
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
+import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 
 export default function App() {
   return (
@@ -38,6 +41,8 @@ export default function App() {
             <Route path="/termos" element={<TermsPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
             {/* Authenticated app — same URLs as before (no /app prefix), just no
                 longer nested under "/" so the landing page can own that path. */}
@@ -58,6 +63,7 @@ export default function App() {
               <Route path="financial" element={<FinancialPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="settings/team" element={<TeamPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

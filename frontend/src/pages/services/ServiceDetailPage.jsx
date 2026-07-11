@@ -4,6 +4,7 @@ import { ArrowLeft, Wrench, Car, User, Clock, CheckCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import api from '../../services/api'
 import { StatusBadge, Skeleton, Card, Button } from '../../components/ui/index'
+import { InvoiceAction } from '../../components/invoices/InvoiceAction'
 import { formatCurrency, formatDateTime } from '../../utils/format'
 import toast from 'react-hot-toast'
 
@@ -56,6 +57,9 @@ export default function ServiceDetailPage() {
       <div className="flex items-center justify-between">
         <Button variant="ghost" icon={ArrowLeft} onClick={() => navigate(-1)}>Voltar</Button>
         <div className="flex gap-2">
+          {service.status === 'COMPLETED' && (
+            <InvoiceAction entityType="service" entityId={service.id} initialInvoice={service.invoice} />
+          )}
           {transitions.map(s => (
             <button key={s} onClick={() => updateStatus(s)} disabled={updating}
               className={`text-sm flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all duration-200 ease-out-expo disabled:opacity-40 ${

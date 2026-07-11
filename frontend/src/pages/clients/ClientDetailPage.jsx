@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Phone, MessageCircle, Mail, MapPin, Car, ShoppingCart, Wrench, Edit2, Plus } from 'lucide-react'
 import api from '../../services/api'
-import { StatusBadge, Skeleton, Card, Button } from '../../components/ui/index'
+import { StatusBadge, Skeleton, Card, Button, Modal, Input, FormGroup } from '../../components/ui/index'
 import { formatCurrency, formatDate, formatDocument, formatPhone } from '../../utils/format'
 import toast from 'react-hot-toast'
 
@@ -14,21 +14,21 @@ export default function ClientDetailPage() {
   const [history, setHistory] = useState({ sales: [], services: [] })
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('overview')
+  const [showVehicleModal, setShowVehicleModal] = useState(false)
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [c, h] = await Promise.all([
-          api.get(`/clients/${id}`),
-          api.get(`/clients/${id}/history`),
-        ])
-        setClient(c.data)
-        setHistory(h.data)
-      } catch { toast.error('Erro ao carregar cliente') }
-      finally { setLoading(false) }
-    }
-    load()
-  }, [id])
+  const load = async () => {
+    try {
+      const [c, h] = await Promise.all([
+        api.get(`/clients/${id}`),
+        api.get(`/clients/${id}/history`),
+      ])
+      setClient(c.data)
+      setHistory(h.data)
+    } catch { toast.error('Erro ao carregar cliente') }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => { load() }, [id])
 
   if (loading) return (
     <div className="space-y-4 animate-fade-in">
@@ -132,12 +132,22 @@ export default function ClientDetailPage() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display font-semibold text-white">Veículos</h3>
-            <Link to={`/services/new?clientId=${id}`}>
-              <Button variant="secondary" size="sm" icon={Plus}>Novo Serviço</Button>
-            </Link>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" icon={Plus} onClick={() => setShowVehicleModal(true)}>
+                Novo Veículo
+              </Button>
+              <Link to={`/services/new?clientId=${id}`}>
+                <Button variant="secondary" size="sm" icon={Plus}>Novo Serviço</Button>
+              </Link>
+            </div>
           </div>
           {client.vehicles?.length === 0 ? (
-            <p className="text-white/30 text-sm text-center py-8">Nenhum veículo cadastrado</p>
+            <div className="text-center py-8">
+              <p className="text-white/30 text-sm mb-3">Nenhum veículo cadastrado</p>
+              <Button variant="secondary" size="sm" icon={Plus} onClick={() => setShowVehicleModal(true)}>
+                Cadastrar veículo
+              </Button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {client.vehicles.map(v => (
@@ -213,6 +223,84 @@ export default function ClientDetailPage() {
           </table>
         </div>
       )}
+
+      {/* New Vehicle Modal */}
+      <Modal open={showVehicleModal} onClose={() => setShowVehicleModal(false)} title="Novo Veículo">
+        <NewVehicleForm
+          clientId={id}
+          onClose={() => setShowVehicleModal(false)}
+          onSuccess={() => { setShowVehicleModal(false); load() }}
+        />
+      </Modal>
     </div>
+  )
+}
+
+function NewVehicleForm({ clientId, onClose, onSuccess }) {
+  const [form, setForm] = useState({
+    plate: '', brand: '', model: '', year: '', color: '', fuelType: '', notes: '',
+  })
+  const [loading, setLoading] = useState(false)
+  const set = (f) => (e) => setForm(x => ({ ...x, [f]: e.target.value }))
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      await api.post('/vehicles', {
+        ...form,
+        clientId,
+        plate: form.plate.toUpperCase().trim(),
+        year: Number(form.year),
+      })
+      toast.success('Veículo cadastrado!')
+      onSuccess()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erro ao cadastrar veículo')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <FormGroup label="Placa" required>
+          <Input value={form.plate} onChange={set('plate')} placeholder="ABC1D23" maxLength={8}
+            className="uppercase" required />
+        </FormGroup>
+        <FormGroup label="Ano" required>
+          <Input type="number" value={form.year} onChange={set('year')} placeholder="2020" required />
+        </FormGroup>
+        <FormGroup label="Marca" required>
+          <Input value={form.brand} onChange={set('brand')} placeholder="Volkswagen" required />
+        </FormGroup>
+        <FormGroup label="Modelo" required>
+          <Input value={form.model} onChange={set('model')} placeholder="Gol" required />
+        </FormGroup>
+        <FormGroup label="Cor">
+          <Input value={form.color} onChange={set('color')} placeholder="Prata" />
+        </FormGroup>
+        <FormGroup label="Combustível">
+          <select value={form.fuelType} onChange={set('fuelType')} className="input-field">
+            <option value="">Selecione</option>
+            {['Flex', 'Gasolina', 'Etanol', 'Diesel', 'GNV', 'Elétrico', 'Híbrido'].map(f => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+        </FormGroup>
+        <div className="col-span-2">
+          <FormGroup label="Observações">
+            <Input value={form.notes} onChange={set('notes')} placeholder="Opcional" />
+          </FormGroup>
+        </div>
+      </div>
+      <div className="flex gap-3 pt-2">
+        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancelar</Button>
+        <Button type="submit" className="flex-1" loading={loading}>
+          {loading ? 'Salvando...' : 'Cadastrar'}
+        </Button>
+      </div>
+    </form>
   )
 }

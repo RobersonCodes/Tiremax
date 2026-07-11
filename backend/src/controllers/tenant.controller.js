@@ -116,10 +116,19 @@ const getSettings = async (req, res, next) => {
 
 const updateSettings = async (req, res, next) => {
   try {
-    const { name, phone, whatsapp, email, address, city, state, zipCode, openHours, primaryColor, cnpj } = req.body;
+    const {
+      name, phone, whatsapp, email, address, city, state, zipCode, openHours, primaryColor, cnpj,
+      regimeTributario, inscricaoMunicipal, itemListaServico, cnaeCode, aliquotaIss,
+      focusNfeEmpresaId, fiscalEnvironment, fiscalEnabled,
+    } = req.body;
     const tenant = await prisma.tenant.update({
       where: { id: req.tenantId },
-      data: { name, phone, whatsapp, email, address, city, state, zipCode, openHours, primaryColor, cnpj },
+      data: {
+        name, phone, whatsapp, email, address, city, state, zipCode, openHours, primaryColor, cnpj,
+        regimeTributario, inscricaoMunicipal, itemListaServico, cnaeCode,
+        aliquotaIss: aliquotaIss !== undefined && aliquotaIss !== '' ? Number(aliquotaIss) : undefined,
+        focusNfeEmpresaId, fiscalEnvironment, fiscalEnabled,
+      },
     });
     res.json(tenant);
   } catch (err) { next(err); }

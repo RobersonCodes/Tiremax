@@ -45,6 +45,7 @@ const findOne = async (req, res, next) => {
         user: { select: { id: true, name: true } },
         items: { include: { product: { select: { id: true, name: true, unit: true } } } },
         payments: true,
+        invoice: true,
       },
     });
     if (!sale) return res.status(404).json({ message: 'Venda não encontrada' });

@@ -45,4 +45,24 @@ const sendTrialExpiring = async ({ name, email, tenantName, daysLeft }) => {
   }
 };
 
-module.exports = { sendWelcome, sendTrialExpiring };
+const sendPasswordReset = async ({ name, email, resetUrl }) => {
+  const client = getResend();
+  if (!client) {
+    console.warn('[Email] RESEND_API_KEY não configurada — link de reset não enviado. URL:', resetUrl);
+    return;
+  }
+  try {
+    await client.emails.send({
+      from: FROM(), to: email,
+      subject: 'Redefinição de senha - TireMax ERP',
+      html: `<p>Olá ${name}, recebemos um pedido para redefinir sua senha.</p>
+             <p><a href="${resetUrl}">Clique aqui para criar uma nova senha</a>. O link expira em 1 hora.</p>
+             <p>Se você não pediu isso, pode ignorar este e-mail.</p>`,
+    });
+    console.log('[Email] Reset de senha enviado para:', email);
+  } catch (err) {
+    console.error('[Email] Erro:', err.message);
+  }
+};
+
+module.exports = { sendWelcome, sendTrialExpiring, sendPasswordReset };

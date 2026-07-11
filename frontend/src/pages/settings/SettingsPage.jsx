@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { Save, Upload, Store, Phone, Clock, MapPin, Palette, X, Info, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Save, Upload, Store, Phone, Clock, MapPin, Palette, X, Info, Lock, Users, ChevronRight, FileText, AlertTriangle } from 'lucide-react'
 import { useSettings } from '../../contexts/SettingsContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { PageHeader, Card, Button, Input, FormGroup } from '../../components/ui/index'
@@ -56,6 +57,23 @@ export default function SettingsPage() {
         title="Configurações"
         subtitle="Personalize o sistema com as informações da sua borracharia"
       />
+
+      {isAdmin && (
+        <Link to="/settings/team">
+          <Card className="flex items-center justify-between hover:border-brand-500/30 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/15 flex items-center justify-center">
+                <Users size={18} className="text-brand-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Equipe</p>
+                <p className="text-xs text-white/40">Gerencie os usuários com acesso ao sistema</p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-white/30" />
+          </Card>
+        </Link>
+      )}
 
       <form onSubmit={handleSave} className="space-y-5">
 
@@ -203,6 +221,71 @@ export default function SettingsPage() {
                     style={{ background: c, borderColor: form.primaryColor === c ? 'white' : 'transparent' }} />
                 ))}
               </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Fiscal — emissão de nota via Focus NFe */}
+        {isAdmin && (
+          <Card>
+            <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-white/70 mb-2 flex items-center gap-2">
+              <FileText size={15} className="text-brand-500" /> Fiscal — Emissão de Nota
+            </h2>
+            <p className="text-xs text-white/35 mb-4">
+              Para emitir nota fiscal você precisa de uma conta no{' '}
+              <a href="https://focusnfe.com.br" target="_blank" rel="noreferrer" className="text-brand-500 hover:underline">
+                Focus NFe
+              </a>, com a empresa cadastrada e certificado digital A1 configurado no painel deles.
+              O TireMax não armazena seu certificado digital.
+            </p>
+
+            <div className="flex items-start gap-2 mb-4 p-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/15">
+              <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-200/80">
+                Enquanto "Ambiente" estiver em Homologação, as notas emitidas são de teste e não têm validade fiscal.
+                Só mude para Produção depois de confirmar que tudo está funcionando corretamente.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormGroup label="Regime tributário">
+                <select value={form.regimeTributario || ''} onChange={set('regimeTributario')} className="input-field" disabled={!isAdmin}>
+                  <option value="">Selecione</option>
+                  <option value="MEI">MEI</option>
+                  <option value="SIMPLES_NACIONAL">Simples Nacional</option>
+                  <option value="LUCRO_PRESUMIDO">Lucro Presumido</option>
+                  <option value="LUCRO_REAL">Lucro Real</option>
+                </select>
+              </FormGroup>
+              <FormGroup label="Inscrição Municipal">
+                <Input value={form.inscricaoMunicipal || ''} onChange={set('inscricaoMunicipal')} placeholder="Necessária p/ NFS-e" disabled={!isAdmin} />
+              </FormGroup>
+              <FormGroup label="Item Lista Serviço (LC 116)">
+                <Input value={form.itemListaServico || ''} onChange={set('itemListaServico')} placeholder="Ex: 14.01" disabled={!isAdmin} />
+              </FormGroup>
+              <FormGroup label="Alíquota ISS (%)">
+                <Input type="number" step="0.01" value={form.aliquotaIss || ''} onChange={set('aliquotaIss')} placeholder="Ex: 5" disabled={!isAdmin} />
+              </FormGroup>
+              <FormGroup label="CNAE">
+                <Input value={form.cnaeCode || ''} onChange={set('cnaeCode')} placeholder="0000-0/00" disabled={!isAdmin} />
+              </FormGroup>
+              <FormGroup label="ID da empresa no Focus NFe">
+                <Input value={form.focusNfeEmpresaId || ''} onChange={set('focusNfeEmpresaId')} placeholder="Referência do painel Focus" disabled={!isAdmin} />
+              </FormGroup>
+              <FormGroup label="Ambiente">
+                <select value={form.fiscalEnvironment || 'homologacao'} onChange={set('fiscalEnvironment')} className="input-field" disabled={!isAdmin}>
+                  <option value="homologacao">Homologação (teste)</option>
+                  <option value="producao">Produção (nota real)</option>
+                </select>
+              </FormGroup>
+              <FormGroup label="Emissão de nota">
+                <select value={form.fiscalEnabled ? 'true' : 'false'}
+                  onChange={e => setForm(f => ({ ...f, fiscalEnabled: e.target.value === 'true' }))}
+                  className="input-field" disabled={!isAdmin}>
+                  <option value="false">Desativada</option>
+                  <option value="true">Ativada</option>
+                </select>
+              </FormGroup>
             </div>
           </Card>
         )}

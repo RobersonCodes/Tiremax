@@ -78,6 +78,11 @@ export default function LoginPage() {
                   {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
+              <div className="text-right mt-1.5">
+                <a href="/esqueci-senha" className="text-xs text-white/35 hover:text-yellow-400 transition-colors">
+                  Esqueci minha senha
+                </a>
+              </div>
             </div>
 
             {error && (

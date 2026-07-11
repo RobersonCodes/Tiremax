@@ -30,6 +30,9 @@ export default function NewServicePage() {
   const [items, setItems] = useState([])
   const [productSearch, setProductSearch] = useState('')
   const [productResults, setProductResults] = useState([])
+  const [showNewVehicleForm, setShowNewVehicleForm] = useState(false)
+  const [newVehicle, setNewVehicle] = useState({ plate: '', brand: '', model: '', year: '', color: '' })
+  const [savingVehicle, setSavingVehicle] = useState(false)
 
   useEffect(() => {
     api.get('/users').then(r => setUsers(r.data)).catch(() => {})
@@ -68,6 +71,28 @@ export default function NewServicePage() {
     setClientResults([])
     const { data } = await api.get(`/vehicles?clientId=${c.id}`)
     setVehicles(data)
+  }
+
+  const handleCreateVehicle = async (e) => {
+    e.preventDefault()
+    setSavingVehicle(true)
+    try {
+      const { data } = await api.post('/vehicles', {
+        ...newVehicle,
+        clientId: selectedClient.id,
+        plate: newVehicle.plate.toUpperCase().trim(),
+        year: Number(newVehicle.year),
+      })
+      setVehicles(v => [...v, data])
+      setForm(f => ({ ...f, vehicleId: data.id }))
+      setShowNewVehicleForm(false)
+      setNewVehicle({ plate: '', brand: '', model: '', year: '', color: '' })
+      toast.success('Veículo cadastrado!')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erro ao cadastrar veículo')
+    } finally {
+      setSavingVehicle(false)
+    }
   }
 
   const addProduct = (p) => {
@@ -156,16 +181,48 @@ export default function NewServicePage() {
                   </AnimatePresence>
                 </div>
               )}
-              {vehicles.length > 0 && (
-                <div className="mt-3">
-                  <FormGroup label="Veículo">
-                    <select value={form.vehicleId} onChange={set('vehicleId')} className="input-field">
-                      <option value="">Selecionar veículo...</option>
-                      {vehicles.map(v => (
-                        <option key={v.id} value={v.id}>{v.brand} {v.model} {v.year} · {v.plate}</option>
-                      ))}
-                    </select>
-                  </FormGroup>
+              {selectedClient && !showNewVehicleForm && (
+                <div className="mt-3 space-y-2">
+                  {vehicles.length > 0 && (
+                    <FormGroup label="Veículo">
+                      <select value={form.vehicleId} onChange={set('vehicleId')} className="input-field">
+                        <option value="">Selecionar veículo...</option>
+                        {vehicles.map(v => (
+                          <option key={v.id} value={v.id}>{v.brand} {v.model} {v.year} · {v.plate}</option>
+                        ))}
+                      </select>
+                    </FormGroup>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowNewVehicleForm(true)}
+                    className="flex items-center gap-1.5 text-xs text-brand-500 hover:text-brand-400 transition-colors"
+                  >
+                    <Plus size={13} /> {vehicles.length > 0 ? 'Cadastrar outro veículo' : 'Cliente sem veículo cadastrado — adicionar agora'}
+                  </button>
+                </div>
+              )}
+
+              {selectedClient && showNewVehicleForm && (
+                <div className="mt-3 p-3 bg-surface-600/40 rounded-xl border border-white/[0.05] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-white/60">Novo veículo</p>
+                    <button type="button" onClick={() => setShowNewVehicleForm(false)} className="text-white/30 hover:text-white/60">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input value={newVehicle.plate} onChange={e => setNewVehicle(v => ({ ...v, plate: e.target.value }))} placeholder="Placa" className="uppercase" />
+                    <Input type="number" value={newVehicle.year} onChange={e => setNewVehicle(v => ({ ...v, year: e.target.value }))} placeholder="Ano" />
+                    <Input value={newVehicle.brand} onChange={e => setNewVehicle(v => ({ ...v, brand: e.target.value }))} placeholder="Marca" />
+                    <Input value={newVehicle.model} onChange={e => setNewVehicle(v => ({ ...v, model: e.target.value }))} placeholder="Modelo" />
+                    <Input value={newVehicle.color} onChange={e => setNewVehicle(v => ({ ...v, color: e.target.value }))} placeholder="Cor" className="col-span-2" />
+                  </div>
+                  <Button type="button" size="sm" className="w-full" loading={savingVehicle}
+                    disabled={!newVehicle.plate || !newVehicle.brand || !newVehicle.model || !newVehicle.year}
+                    onClick={handleCreateVehicle}>
+                    {savingVehicle ? 'Salvando...' : 'Salvar veículo'}
+                  </Button>
                 </div>
               )}
             </Card>
