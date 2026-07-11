@@ -270,7 +270,7 @@ function Testimonials() {
               <div className="flex gap-0.5 text-yellow-400 mb-3">
                 {[...Array(5)].map((_, s) => <Star key={s} size={14} fill="currentColor" />)}
               </div>
-              <p className="text-sm leading-relaxed text-white/70">"{t.quote}"</p>
+              <p className="text-sm leading-relaxed text-white/70">&quot;{t.quote}&quot;</p>
               <div className="mt-5 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-400/10 font-display font-bold text-yellow-400">
                   {t.name.charAt(1)?.toUpperCase() || '?'}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Wrench, Car, User, Clock, CheckCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -30,11 +30,11 @@ export default function ServiceDetailPage() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
 
-  const load = () => {
+  const load = useCallback(() => {
     api.get(`/services/${id}`).then(r => setService(r.data)).catch(() => toast.error('OS não encontrada')).finally(() => setLoading(false))
-  }
+  }, [id])
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => { load() }, [load])
 
   const updateStatus = async (status) => {
     setUpdating(true)

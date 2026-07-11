@@ -5,7 +5,6 @@ import { ArrowLeft, Plus, Trash2, Search, CheckCircle, X } from 'lucide-react'
 import api from '../../services/api'
 import { Button, Input, FormGroup, Card } from '../../components/ui/index'
 import { formatCurrency } from '../../utils/format'
-import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 const SERVICE_TYPES = [
@@ -16,7 +15,6 @@ const SERVICE_TYPES = [
 export default function NewServicePage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [clientSearch, setClientSearch] = useState('')
   const [clientResults, setClientResults] = useState([])
@@ -34,16 +32,17 @@ export default function NewServicePage() {
   const [newVehicle, setNewVehicle] = useState({ plate: '', brand: '', model: '', year: '', color: '' })
   const [savingVehicle, setSavingVehicle] = useState(false)
 
+  const preClientId = params.get('clientId')
+
   useEffect(() => {
     api.get('/users').then(r => setUsers(r.data)).catch(() => {})
-    const preClientId = params.get('clientId')
     if (preClientId) {
       api.get(`/clients/${preClientId}`).then(r => {
         setSelectedClient(r.data)
         setVehicles(r.data.vehicles || [])
       }).catch(() => {})
     }
-  }, [])
+  }, [preClientId])
 
   // Client search
   useEffect(() => {

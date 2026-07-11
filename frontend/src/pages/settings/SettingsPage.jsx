@@ -242,7 +242,7 @@ export default function SettingsPage() {
             <div className="flex items-start gap-2 mb-4 p-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/15">
               <AlertTriangle size={14} className="text-amber-400 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-200/80">
-                Enquanto "Ambiente" estiver em Homologação, as notas emitidas são de teste e não têm validade fiscal.
+                Enquanto &quot;Ambiente&quot; estiver em Homologação, as notas emitidas são de teste e não têm validade fiscal.
                 Só mude para Produção depois de confirmar que tudo está funcionando corretamente.
               </p>
             </div>

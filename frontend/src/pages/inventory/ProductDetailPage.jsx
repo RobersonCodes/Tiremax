@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Package, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -14,15 +14,15 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showMovModal, setShowMovModal] = useState(false)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const { data } = await api.get(`/products/${id}`)
       setProduct(data)
     } catch { toast.error('Produto não encontrado') }
     finally { setLoading(false) }
-  }
+  }, [id])
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => { load() }, [load])
 
   if (loading) return <div className="space-y-4"><Skeleton className="h-48 rounded-2xl" /><Skeleton className="h-64 rounded-2xl" /></div>
   if (!product) return <div className="text-white/40 text-center py-20">Produto não encontrado</div>

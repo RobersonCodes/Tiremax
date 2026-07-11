@@ -118,7 +118,7 @@ export default function TermsPage() {
               8. Limitação de Responsabilidade
             </h2>
             <p className="mt-3">
-              O TireMax ERP é fornecido "como está". Não nos
+              O TireMax ERP é fornecido &quot;como está&quot;. Não nos
               responsabilizamos por perdas decorrentes de uso indevido do
               sistema, indisponibilidade de terceiros (internet, servidores)
               ou erros de preenchimento de dados pelo próprio usuário.

@@ -21,7 +21,7 @@ export async function setupBackButton(callback) {
   try {
     const { App } = await import('@capacitor/app')
     App.addListener('backButton', callback)
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 export async function exitApp() {
@@ -29,7 +29,7 @@ export async function exitApp() {
   try {
     const { App } = await import('@capacitor/app')
     await App.exitApp()
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 export async function getAppInfo() {
@@ -50,7 +50,7 @@ export async function setupStatusBar() {
       await StatusBar.setBackgroundColor({ color: '#0d1020' })
       await StatusBar.setOverlaysWebView({ overlay: false })
     }
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 // ─── Splash Screen ────────────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ export async function hideSplashScreen(delay = 0) {
     const { SplashScreen } = await import('@capacitor/splash-screen')
     if (delay > 0) await new Promise(r => setTimeout(r, delay))
     await SplashScreen.hide({ fadeOutDuration: 300 })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 // ─── Keyboard ────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export async function setupKeyboard() {
     Keyboard.addListener('keyboardWillHide', () => {
       document.body.classList.remove('keyboard-open')
     })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 // ─── Haptics ─────────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export async function hapticLight() {
   try {
     const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
     await Haptics.impact({ style: ImpactStyle.Light })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 export async function hapticMedium() {
@@ -91,7 +91,7 @@ export async function hapticMedium() {
   try {
     const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
     await Haptics.impact({ style: ImpactStyle.Medium })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 export async function hapticSuccess() {
@@ -99,7 +99,7 @@ export async function hapticSuccess() {
   try {
     const { Haptics, NotificationType } = await import('@capacitor/haptics')
     await Haptics.notification({ type: NotificationType.Success })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 export async function hapticError() {
@@ -107,7 +107,7 @@ export async function hapticError() {
   try {
     const { Haptics, NotificationType } = await import('@capacitor/haptics')
     await Haptics.notification({ type: NotificationType.Error })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 // ─── Network ─────────────────────────────────────────────────────────────────
@@ -128,7 +128,7 @@ export async function onNetworkChange(callback) {
   try {
     const { Network } = await import('@capacitor/network')
     await Network.addListener('networkStatusChange', callback)
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 // ─── Storage nativo ───────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ export async function setPreference(key, value) {
       const { Preferences } = await import('@capacitor/preferences')
       await Preferences.set({ key, value: val })
     }
-  } catch {}
+  } catch { /* plugin indisponível — segue só com localStorage */ }
   localStorage.setItem(key, val)
 }
 
@@ -150,7 +150,7 @@ export async function getPreference(key) {
       const { value } = await Preferences.get({ key })
       return value
     }
-  } catch {}
+  } catch { /* plugin indisponível — segue só com localStorage */ }
   return localStorage.getItem(key)
 }
 
@@ -160,7 +160,7 @@ export async function removePreference(key) {
       const { Preferences } = await import('@capacitor/preferences')
       await Preferences.remove({ key })
     }
-  } catch {}
+  } catch { /* plugin indisponível — segue só com localStorage */ }
   localStorage.removeItem(key)
 }
 
@@ -191,23 +191,21 @@ export async function shareContent({ title, text, url, dialogTitle } = {}) {
       await navigator.share({ title, text, url })
       return true
     }
-  } catch {}
+  } catch { /* usuário cancelou ou plugin indisponível */ }
   return false
 }
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
 export async function takePhoto({ quality = 80, allowEditing = false } = {}) {
-  try {
-    if (isNative()) {
-      const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera')
-      return await Camera.getPhoto({
-        quality,
-        allowEditing,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera,
-      })
-    }
-  } catch (err) { throw err }
+  if (isNative()) {
+    const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera')
+    return await Camera.getPhoto({
+      quality,
+      allowEditing,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera,
+    })
+  }
   return new Promise((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -233,7 +231,7 @@ export async function showConfirm(title, message, { okButtonTitle = 'OK', cancel
       const { value } = await Dialog.confirm({ title, message, okButtonTitle, cancelButtonTitle })
       return value
     }
-  } catch {}
+  } catch { /* plugin indisponível */ }
   return window.confirm(`${title}\n${message}`)
 }
 
@@ -244,7 +242,7 @@ export async function showPrompt(title, message, { inputPlaceholder = '', inputT
       const { value, cancelled } = await Dialog.prompt({ title, message, inputPlaceholder, inputText, okButtonTitle, cancelButtonTitle })
       return cancelled ? null : value
     }
-  } catch {}
+  } catch { /* plugin indisponível */ }
   return window.prompt(`${title}\n${message}`, inputText)
 }
 
@@ -266,7 +264,7 @@ export async function scheduleNotification({ id, title, body, scheduleAt, extra 
         iconColor: '#3b64ff',
       }],
     })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 export async function scheduleStockAlert(productName, stock) {
@@ -297,7 +295,7 @@ export async function lockPortrait() {
   try {
     const { ScreenOrientation } = await import('@capacitor/screen-orientation')
     await ScreenOrientation.lock({ orientation: 'portrait' })
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 export async function unlockOrientation() {
@@ -305,7 +303,7 @@ export async function unlockOrientation() {
   try {
     const { ScreenOrientation } = await import('@capacitor/screen-orientation')
     await ScreenOrientation.unlock()
-  } catch {}
+  } catch { /* plugin indisponível */ }
 }
 
 // ─── Filesystem ──────────────────────────────────────────────────────────────

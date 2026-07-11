@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getPreference, setPreference, removePreference, isNative, getPlatform } from './capacitor.service'
+import { getPreference, setPreference, removePreference, isNative } from './capacitor.service'
 
 /**
  * Resolve a URL base da API.

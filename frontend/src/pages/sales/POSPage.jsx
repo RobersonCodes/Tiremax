@@ -37,7 +37,7 @@ export default function POSPage() {
       try {
         const { data } = await api.get(`/products/search?q=${encodeURIComponent(productSearch)}`)
         setProductResults(data)
-      } catch {}
+      } catch { /* busca falhou — mantém resultados anteriores */ }
     }, 300)
     return () => clearTimeout(t)
   }, [productSearch])
@@ -49,7 +49,7 @@ export default function POSPage() {
       try {
         const { data } = await api.get(`/clients/search?q=${encodeURIComponent(clientSearch)}`)
         setClientResults(data)
-      } catch {}
+      } catch { /* busca falhou — mantém resultados anteriores */ }
     }, 300)
     return () => clearTimeout(t)
   }, [clientSearch])

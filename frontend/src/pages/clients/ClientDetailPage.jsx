@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Phone, MessageCircle, Mail, MapPin, Car, ShoppingCart, Wrench, Edit2, Plus } from 'lucide-react'
@@ -16,7 +16,7 @@ export default function ClientDetailPage() {
   const [tab, setTab] = useState('overview')
   const [showVehicleModal, setShowVehicleModal] = useState(false)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const [c, h] = await Promise.all([
         api.get(`/clients/${id}`),
@@ -26,9 +26,9 @@ export default function ClientDetailPage() {
       setHistory(h.data)
     } catch { toast.error('Erro ao carregar cliente') }
     finally { setLoading(false) }
-  }
+  }, [id])
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => { load() }, [load])
 
   if (loading) return (
     <div className="space-y-4 animate-fade-in">

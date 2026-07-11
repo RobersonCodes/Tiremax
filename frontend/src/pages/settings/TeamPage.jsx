@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Lock, UserX, UserCheck, Edit2 } from 'lucide-react'
 import api from '../../services/api'
@@ -24,7 +24,7 @@ export default function TeamPage() {
 
   const isAdmin = me?.role === 'ADMIN'
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await api.get('/users')
@@ -34,9 +34,9 @@ export default function TeamPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { if (isAdmin) load() }, [])
+  useEffect(() => { if (isAdmin) load() }, [isAdmin, load])
 
   const toggleActive = async (u) => {
     try {

@@ -17,7 +17,7 @@ export function SettingsProvider({ children }) {
         if (!token) return
         const { data } = await api.get('/settings')
         setSettings(data)
-      } catch {}
+      } catch { /* sem sessão ainda — mantém defaults */ }
     }
     load()
   }, [])
@@ -26,7 +26,7 @@ export function SettingsProvider({ children }) {
     try {
       const { data } = await api.get('/settings')
       setSettings(data)
-    } catch {}
+    } catch { /* mantém settings atuais em caso de erro */ }
   }
 
   const update = async (form) => {
@@ -52,6 +52,7 @@ export function SettingsProvider({ children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- provider + hook no mesmo arquivo é o padrão deste projeto
 export const useSettings = () => {
   const ctx = useContext(SettingsContext)
   if (!ctx) throw new Error('useSettings must be used within SettingsProvider')

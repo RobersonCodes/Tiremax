@@ -7,7 +7,7 @@ export function useBackButton() {
   const location = useLocation()
 
   useEffect(() => {
-    setupBackButton(({ canGoBack }) => {
+    setupBackButton(() => {
       if (location.pathname === '/dashboard') {
         // Na tela principal, pergunta se quer sair
         if (window.confirm('Deseja sair do TireMax ERP?')) {
@@ -17,5 +17,5 @@ export function useBackButton() {
         navigate(-1)
       }
     })
-  }, [location.pathname])
+  }, [location.pathname, navigate])
 }
