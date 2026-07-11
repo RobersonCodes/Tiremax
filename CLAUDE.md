@@ -15,9 +15,11 @@ Backend (`backend/`):
 - `npm run db:generate` — `prisma generate` (run after editing `prisma/schema.prisma`)
 - `npm run db:seed` — `node prisma/seed.js`
 
-- `npm test` — Jest + Supertest (auth e isolamento de tenant, `backend/tests/`). Precisa de `backend/.env.test` (copie de `.env.test.example`) apontando pra um Postgres **dedicado a teste** — a `DATABASE_URL` tem que terminar em `_test` ou os testes recusam rodar (trava em `tests/helpers/testDb.js`, pensada especificamente porque este projeto está em produção). O `globalSetup` roda `prisma migrate deploy` nesse banco automaticamente; cada teste limpa as tabelas via `TRUNCATE ... CASCADE` antes de rodar.
+- `npm test` — Jest + Supertest, 121 tests covering every backend controller (`backend/tests/`). Needs `backend/.env.test` (copy from `.env.test.example`) pointing at a Postgres **dedicated to testing** — `DATABASE_URL` must end in `_test` or the tests refuse to run (guard in `tests/helpers/testDb.js`, specifically because this project is in production). `globalSetup` runs `prisma migrate deploy` against that database automatically; each test truncates tables via `TRUNCATE ... CASCADE` beforehand.
 
 No lint script in `backend/`.
+
+CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: one job spins up an ephemeral Postgres service and runs the backend test suite; another runs frontend `lint` + `build`. It does not trigger deploys — Vercel/Railway auto-deploy independently on push.
 
 Frontend (`frontend/`):
 - `npm run dev` — Vite dev server (port 5173, proxies `/api` to the backend)

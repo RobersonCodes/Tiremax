@@ -15,6 +15,7 @@
 </p>
 
 <p>
+<a href="https://github.com/RobersonCodes/Tiremax/actions/workflows/ci.yml"><img src="https://github.com/RobersonCodes/Tiremax/actions/workflows/ci.yml/badge.svg"/></a>
 <a href="https://tiremax.vercel.app"><img src="https://img.shields.io/badge/demo-tiremax.vercel.app-3b64ff?style=flat-square&logo=vercel&logoColor=white"/></a>
 <a href="https://github.com/RobersonCodes"><img src="https://img.shields.io/badge/perfil-RobersonCodes-181717?style=flat-square&logo=github&logoColor=white"/></a>
 </p>
@@ -316,7 +317,7 @@ npm test
 
 A `DATABASE_URL` de `.env.test` **precisa terminar em `_test`** — é uma trava de segurança (`tests/helpers/testDb.js`) pensada porque este projeto está em produção: os testes recusam rodar contra qualquer banco que não pareça ser dedicado a teste. O `globalSetup` do Jest aplica as migrations nesse banco automaticamente; cada teste limpa as tabelas via `TRUNCATE ... CASCADE` antes de rodar.
 
-Ainda não roda em CI (ver [Roadmap](#roadmap)) — hoje é só local, antes do push.
+Roda em CI a cada push/PR pra `main` (`.github/workflows/ci.yml`): um job sobe um Postgres efêmero (só existe dentro do job, nunca é o de dev/produção) e roda a suíte inteira; outro job roda `lint` + `build` do frontend.
 
 ---
 
@@ -360,13 +361,13 @@ Guias completos: [Android](./CAPACITOR_ANDROID.md) · [iOS](./CAPACITOR_IOS.md) 
 |---|---|---|
 | Em produção com uso real | ✅ Deploy público, dashboard ao vivo | ✅ |
 | Multi-tenancy | 🟡 Funcional, mas manual por convenção — sem enforcement estrutural | ✅ Estrutural (RLS ou middleware garantido) |
-| Testes automatizados | 🟡 121 testes (Jest/Supertest), mas só rodam local — sem CI ainda | ✅ |
-| CI/CD | ❌ Não configurado | ✅ |
+| Testes automatizados | ✅ 121 testes (Jest/Supertest), rodando em CI a cada push/PR | ✅ |
+| CI/CD | 🟡 GitHub Actions roda lint/build/test; deploy é automático mas separado (Vercel/Railway, não gatilhado pelo CI) | ✅ |
 | Segurança HTTP (helmet, rate limit) | ❌ Ausente hoje | ✅ |
 | Módulo fiscal | 🟡 Focus NFe integrado (NFC-e/NFS-e), mas um único provedor, não abstração multi-município | ✅ Integração ativa |
 | App mobile | ✅ Android/iOS via Capacitor, mesma base | Varia |
 
-O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Os testes ajudam a pegar regressão (e já pegaram — ver [Bugs corrigidos](#bugs-corrigidos)), mas não substituem esse trabalho estrutural. Depois entram CI e `helmet` + rate limiting no backend.
+O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Os testes ajudam a pegar regressão (e já pegaram — ver [Bugs corrigidos](#bugs-corrigidos)), mas não substituem esse trabalho estrutural. Depois entra `helmet` + rate limiting no backend.
 
 ---
 
@@ -374,7 +375,7 @@ O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual
 
 - [ ] Migrar isolamento de tenant de manual para estrutural (Prisma Client Extension ou Row-Level Security no Postgres) — **prioridade 1**
 - [x] Suíte de testes automatizados (121 testes, Jest + Supertest — ver [Testes automatizados](#-testes-automatizados))
-- [ ] CI (lint + test) via GitHub Actions
+- [x] CI (lint + build + test) via GitHub Actions (`.github/workflows/ci.yml`)
 - [ ] `helmet` + rate limiting no backend
 - [ ] Changelog e releases versionadas
 
