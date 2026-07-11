@@ -10,7 +10,7 @@
 <img src="https://img.shields.io/badge/Prisma-5-2D3748?style=flat-square&logo=prisma&logoColor=white"/>
 <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white"/>
 <img src="https://img.shields.io/badge/Deploy-live-2ea44f?style=flat-square"/>
-<img src="https://img.shields.io/badge/Tests-none%20yet-orange?style=flat-square"/>
+<img src="https://img.shields.io/badge/Tests-121%20passing-2ea44f?style=flat-square"/>
 <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square"/>
 </p>
 
@@ -35,6 +35,7 @@
 - [Estrutura do projeto](#-estrutura-do-projeto)
 - [Banco de dados](#️-banco-de-dados)
 - [API Endpoints](#-api-endpoints)
+- [Testes automatizados](#-testes-automatizados)
 - [App mobile (Capacitor)](#-app-mobile-capacitor)
 - [Comparação com produtos consolidados](#comparação-com-produtos-consolidados)
 - [Roadmap](#roadmap)
@@ -102,7 +103,7 @@ sequenceDiagram
     Note over Ctrl,DB: Sem middleware/RLS —<br/>isolamento depende de disciplina do dev,<br/>não de garantia estrutural
 ```
 
-**Por que isso importa**: um controller novo que esqueça o `tenantId` no `where` vaza dados entre tenants sem erro nenhum — o bug é silencioso. É o principal item do roadmap de engenharia deste projeto (ver abaixo), com dois caminhos concretos de correção: um Prisma Client Extension que injeta `tenantId` automaticamente em toda query, ou Row-Level Security nativo do Postgres.
+**Por que isso importa**: um controller novo que esqueça o `tenantId` no `where` vaza dados entre tenants sem erro nenhum — o bug é silencioso. Isso não é hipotético: os testes de isolamento (`backend/tests/tenant-isolation.test.js`) pegaram exatamente esse padrão em produção, em quatro controllers (ver [Bugs corrigidos](#bugs-corrigidos)). É o principal item do roadmap de engenharia deste projeto (ver abaixo), com dois caminhos concretos de correção: um Prisma Client Extension que injeta `tenantId` automaticamente em toda query, ou Row-Level Security nativo do Postgres — testes pegam regressão pontual, não fecham a classe inteira do problema.
 
 Comparado ao [EduLex](https://github.com/RobersonCodes/SaaS-Educativo), onde o mesmo problema é resolvido via `HasQueryFilter` automático do EF Core — a diferença entre os dois projetos é deliberada: aqui o ERP precisava ir ao ar rápido para um cliente real validar o modelo de negócio primeiro.
 
@@ -303,6 +304,22 @@ POST   /api/invoices/cancel/:id
 
 ---
 
+## 🧪 Testes automatizados
+
+121 testes (Jest + Supertest, `backend/tests/`) cobrindo todos os controllers do backend — auth (login, reset de senha), isolamento de tenant (o ponto mais crítico do projeto, ver seção acima), autorização por role, notas fiscais (Focus NFe mockada, sem chamada de rede real) e as regras de negócio de cada módulo (numeração sequencial por tenant, débito de estoque, constraints únicas).
+
+```bash
+cd backend
+cp .env.test.example .env.test   # aponta pra um Postgres SÓ de teste
+npm test
+```
+
+A `DATABASE_URL` de `.env.test` **precisa terminar em `_test`** — é uma trava de segurança (`tests/helpers/testDb.js`) pensada porque este projeto está em produção: os testes recusam rodar contra qualquer banco que não pareça ser dedicado a teste. O `globalSetup` do Jest aplica as migrations nesse banco automaticamente; cada teste limpa as tabelas via `TRUNCATE ... CASCADE` antes de rodar.
+
+Ainda não roda em CI (ver [Roadmap](#roadmap)) — hoje é só local, antes do push.
+
+---
+
 ## 🎨 Design System
 
 - **Tema**: Dark mode profissional
@@ -343,20 +360,20 @@ Guias completos: [Android](./CAPACITOR_ANDROID.md) · [iOS](./CAPACITOR_IOS.md) 
 |---|---|---|
 | Em produção com uso real | ✅ Deploy público, dashboard ao vivo | ✅ |
 | Multi-tenancy | 🟡 Funcional, mas manual por convenção — sem enforcement estrutural | ✅ Estrutural (RLS ou middleware garantido) |
-| Testes automatizados | ❌ Nenhum ainda | ✅ |
+| Testes automatizados | 🟡 121 testes (Jest/Supertest), mas só rodam local — sem CI ainda | ✅ |
 | CI/CD | ❌ Não configurado | ✅ |
 | Segurança HTTP (helmet, rate limit) | ❌ Ausente hoje | ✅ |
 | Módulo fiscal | 🟡 Focus NFe integrado (NFC-e/NFS-e), mas um único provedor, não abstração multi-município | ✅ Integração ativa |
 | App mobile | ✅ Android/iOS via Capacitor, mesma base | Varia |
 
-O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Depois entram testes automatizados (zero hoje) e `helmet` + rate limiting no backend.
+O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Os testes ajudam a pegar regressão (e já pegaram — ver [Bugs corrigidos](#bugs-corrigidos)), mas não substituem esse trabalho estrutural. Depois entram CI e `helmet` + rate limiting no backend.
 
 ---
 
 ## Roadmap
 
 - [ ] Migrar isolamento de tenant de manual para estrutural (Prisma Client Extension ou Row-Level Security no Postgres) — **prioridade 1**
-- [ ] Suíte de testes automatizados (zero hoje)
+- [x] Suíte de testes automatizados (121 testes, Jest + Supertest — ver [Testes automatizados](#-testes-automatizados))
 - [ ] CI (lint + test) via GitHub Actions
 - [ ] `helmet` + rate limiting no backend
 - [ ] Changelog e releases versionadas
@@ -375,6 +392,9 @@ Fica registrado porque foi feio: o `docker-compose.yml` subia MySQL enquanto o `
 6. **Migration faltante para o schema fiscal/invoice/reset de senha** — os campos novos em `tenants` (fiscal), `invoices` (`type`, `pdf_url`, `xml_url`, `focus_ref`, `error_message`) e `users` (`reset_token`, `reset_token_expiry`) tinham sido adicionados no `schema.prisma`, mas a migration correspondente nunca foi gerada. Como o `start.js` do Railway roda só `prisma migrate deploy` (aplica migrations existentes, não gera novas), o banco de produção ficou sem essas colunas até a migration ser criada e commitada.
 7. **`authorize('ADMIN', 'FINANCIAL')` removido sem querer nas rotas de nota fiscal** — no refactor pra Focus NFe, `invoice.routes.js` perdeu o middleware de permissão em `issue`/`cancel` (e nunca teve nas novas `from-sale`/`from-service`), permitindo que qualquer usuário autenticado do tenant emitisse ou cancelasse notas fiscais. Restaurado.
 8. **`npm run lint` do frontend nunca funcionou** — não existia `.eslintrc.cjs` (nem qualquer config) no repositório, então o comando falhava antes de analisar um único arquivo. Adicionada a config e corrigido o backlog de 44 problemas que ela revelou (catch vazios sem comentário, deps de hook faltando, imports mortos, aspas não escapadas em JSX).
+9. **Vazamento cross-tenant real em `product`/`vehicle`/`service`/`user` (`update`)** — o pior bug encontrado neste projeto. Cada um fazia um `updateMany` corretamente escopado por `tenantId` (então nunca escrevia em registro de outro tenant), mas em seguida buscava o registro pra devolver na resposta com `findUnique({ where: { id } })` **sem `tenantId`**. Se o `updateMany` não casasse nenhuma linha (ID de outro tenant), a resposta ainda vinha com os dados completos do registro alheio — preço de custo de produto, nome/telefone de cliente vinculado a uma OS, nome/e-mail de usuário. Corrigido checando `.count` do `updateMany` antes de buscar; testes de regressão em `tenant-isolation.test.js` pra cada um dos quatro.
+10. **"Sucesso enganoso" espalhado por `remove`/`cancel`/`updateStatus`** — em `client`, `product`, `sale`, `service`, `user`, `vehicle` e `financial`, o padrão `updateMany`/`deleteMany` escopado por `tenantId` respondia 200 mesmo quando nenhuma linha era afetada (ID inexistente ou de outro tenant). Sem vazamento de dado — a escrita nunca acontecia — mas a API mentia sobre o resultado. Corrigido em todos os pontos encontrados, checando `.count`/`.length` antes de responder sucesso.
+11. **`stock.controller.js` retornava 500 em vez de 404** — `createMovement` lançava um `Error` puro (sem `statusCode`) ao tentar mexer em produto de outro tenant, caindo no handler genérico de erro. Corrigido pra usar `statusCode: 404`, como o resto do código já fazia.
 
 ---
 
