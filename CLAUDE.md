@@ -15,7 +15,9 @@ Backend (`backend/`):
 - `npm run db:generate` — `prisma generate` (run after editing `prisma/schema.prisma`)
 - `npm run db:seed` — `node prisma/seed.js`
 
-There is no automated test suite (no test script) and no lint script in `backend/`.
+- `npm test` — Jest + Supertest (auth e isolamento de tenant, `backend/tests/`). Precisa de `backend/.env.test` (copie de `.env.test.example`) apontando pra um Postgres **dedicado a teste** — a `DATABASE_URL` tem que terminar em `_test` ou os testes recusam rodar (trava em `tests/helpers/testDb.js`, pensada especificamente porque este projeto está em produção). O `globalSetup` roda `prisma migrate deploy` nesse banco automaticamente; cada teste limpa as tabelas via `TRUNCATE ... CASCADE` antes de rodar.
+
+No lint script in `backend/`.
 
 Frontend (`frontend/`):
 - `npm run dev` — Vite dev server (port 5173, proxies `/api` to the backend)

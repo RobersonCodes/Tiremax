@@ -76,10 +76,11 @@ const update = async (req, res, next) => {
 
 const remove = async (req, res, next) => {
   try {
-    await prisma.client.updateMany({
+    const result = await prisma.client.updateMany({
       where: { id: req.params.id, tenantId: req.tenantId },
       data: { active: false },
     });
+    if (!result.count) return res.status(404).json({ message: 'Cliente não encontrado' });
     res.json({ message: 'Cliente desativado com sucesso' });
   } catch (err) { next(err); }
 };
