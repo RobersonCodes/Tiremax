@@ -10,7 +10,7 @@
 <img src="https://img.shields.io/badge/Prisma-5-2D3748?style=flat-square&logo=prisma&logoColor=white"/>
 <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white"/>
 <img src="https://img.shields.io/badge/Deploy-live-2ea44f?style=flat-square"/>
-<img src="https://img.shields.io/badge/Tests-121%20passing-2ea44f?style=flat-square"/>
+<img src="https://img.shields.io/badge/Tests-148%20passing-2ea44f?style=flat-square"/>
 <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square"/>
 </p>
 
@@ -30,7 +30,7 @@
 
 - [Funcionalidades](#-funcionalidades)
 - [Arquitetura](#arquitetura)
-- [Multi-tenancy](#multi-tenancy--ponto-de-atenção-conhecido)
+- [Multi-tenancy](#multi-tenancy)
 - [Instalação rápida](#-instalação-rápida)
 - [Docker Compose](#-docker-compose)
 - [Estrutura do projeto](#-estrutura-do-projeto)
@@ -84,29 +84,33 @@ graph TD
 
 ---
 
-## Multi-tenancy — ponto de atenção conhecido
+## Multi-tenancy
 
-Isolamento por tenant **funciona hoje**, mas por convenção manual em cada controller (`where: { tenantId: req.tenantId }`), não por *enforcement* estrutural:
+Isolamento por tenant é **estrutural**, não só convenção manual — cada controller ainda escreve `where: { tenantId: req.tenantId }` (isso continua, é a defesa em primeira camada), mas agora existe uma segunda camada que não depende do dev lembrar:
 
 ```mermaid
 sequenceDiagram
     participant C as Cliente
+    participant MW as tenantMiddleware
+    participant Ctx as AsyncLocalStorage
     participant Ctrl as Controller
-    participant Prisma as Prisma Client
+    participant Ext as Prisma Client Extension
     participant DB as PostgreSQL
 
-    C->>Ctrl: Request + JWT (contém tenantId)
-    Ctrl->>Ctrl: Lê tenantId do token
-    Note over Ctrl: Cada controller precisa incluir<br/>where: { tenantId } manualmente
-    Ctrl->>Prisma: findMany({ where: { tenantId, ... } })
-    Prisma->>DB: Query filtrada
+    C->>MW: Request + JWT (contém tenantId)
+    MW->>Ctx: runWithTenant(tenantId, next)
+    Ctx->>Ctrl: resto da requisição roda dentro do contexto
+    Ctrl->>Ext: prisma.produto.findMany({ where: {...} })
+    Note over Ext: injeta/força tenantId no where<br/>(e no data, contra mass-assignment)<br/>usando o tenantId do contexto, não o que o controller passou
+    Ext->>DB: Query sempre filtrada pelo tenant certo
     DB-->>Ctrl: Dados do tenant
-    Note over Ctrl,DB: Sem middleware/RLS —<br/>isolamento depende de disciplina do dev,<br/>não de garantia estrutural
 ```
 
-**Por que isso importa**: um controller novo que esqueça o `tenantId` no `where` vaza dados entre tenants sem erro nenhum — o bug é silencioso. Isso não é hipotético: os testes de isolamento (`backend/tests/tenant-isolation.test.js`) pegaram exatamente esse padrão em produção, em quatro controllers (ver [Bugs corrigidos](#bugs-corrigidos)). É o principal item do roadmap de engenharia deste projeto (ver abaixo), com dois caminhos concretos de correção: um Prisma Client Extension que injeta `tenantId` automaticamente em toda query, ou Row-Level Security nativo do Postgres — testes pegam regressão pontual, não fecham a classe inteira do problema.
+`backend/src/config/tenantContext.js` carrega o `tenantId` da requisição atual via `AsyncLocalStorage` através de toda a cadeia async; `backend/src/config/database.js` usa um Prisma Client Extension (`$allModels.$allOperations`) que, sempre que há um contexto ativo, força `tenantId` no `where` de toda leitura/escrita e no `data` de `create`/`update` em todo modelo com essa coluna — mesmo que o controller esqueça, ou que o corpo da requisição tente forjar um `tenantId` de outro tenant. Rotas sem `tenantMiddleware` (login, `/register`, administração via SUPER_ADMIN) não têm contexto ativo, então continuam funcionando sem restrição — é assim que login por e-mail (cross-tenant por natureza) e o painel de SUPER_ADMIN seguem funcionando normalmente.
 
-Comparado ao [EduLex](https://github.com/RobersonCodes/SaaS-Educativo), onde o mesmo problema é resolvido via `HasQueryFilter` automático do EF Core — a diferença entre os dois projetos é deliberada: aqui o ERP precisava ir ao ar rápido para um cliente real validar o modelo de negócio primeiro.
+**Por que isso existia como problema**: um controller que esquecesse o `tenantId` no `where` vazava dados entre tenants sem erro nenhum — silencioso. Não era hipotético: os testes de isolamento pegaram exatamente esse padrão em produção, em quatro controllers (`product`, `vehicle`, `service`, `user` — ver [Changelog](./CHANGELOG.md) e [Bugs corrigidos](#bugs-corrigidos)). A extension fecha essa classe inteira de bug — `backend/tests/tenant-extension.test.js` prova isso simulando, via uma rota que roda o `tenantMiddleware` de verdade, exatamente o tipo de "esqueceu o tenantId" que já vazou antes.
+
+Comparado ao [EduLex](https://github.com/RobersonCodes/SaaS-Educativo), onde o mesmo problema é resolvido via `HasQueryFilter` automático do EF Core — mesma ideia (isolamento automático na camada de acesso a dados), implementação equivalente aqui via Prisma.
 
 ---
 
@@ -307,7 +311,7 @@ POST   /api/invoices/cancel/:id
 
 ## 🧪 Testes automatizados
 
-121 testes (Jest + Supertest, `backend/tests/`) cobrindo todos os controllers do backend — auth (login, reset de senha), isolamento de tenant (o ponto mais crítico do projeto, ver seção acima), autorização por role, notas fiscais (Focus NFe mockada, sem chamada de rede real) e as regras de negócio de cada módulo (numeração sequencial por tenant, débito de estoque, constraints únicas).
+148 testes (Jest + Supertest, `backend/tests/`) cobrindo todos os controllers do backend — auth (login, reset de senha), isolamento de tenant (incluindo o Prisma Client Extension, ver seção acima), autorização por role, notas fiscais (Focus NFe mockada, sem chamada de rede real), rate limiting, e as regras de negócio de cada módulo (numeração sequencial por tenant, débito de estoque, constraints únicas).
 
 ```bash
 cd backend
@@ -360,24 +364,26 @@ Guias completos: [Android](./CAPACITOR_ANDROID.md) · [iOS](./CAPACITOR_IOS.md) 
 | Dimensão | TireMax (este repo) | ERP SaaS consolidado |
 |---|---|---|
 | Em produção com uso real | ✅ Deploy público, dashboard ao vivo | ✅ |
-| Multi-tenancy | 🟡 Funcional, mas manual por convenção — sem enforcement estrutural | ✅ Estrutural (RLS ou middleware garantido) |
-| Testes automatizados | ✅ 121 testes (Jest/Supertest), rodando em CI a cada push/PR | ✅ |
+| Multi-tenancy | ✅ Estrutural — Prisma Client Extension + convenção manual (defesa em duas camadas) | ✅ Estrutural (RLS ou middleware garantido) |
+| Testes automatizados | ✅ 148 testes (Jest/Supertest), rodando em CI a cada push/PR | ✅ |
 | CI/CD | 🟡 GitHub Actions roda lint/build/test; deploy é automático mas separado (Vercel/Railway, não gatilhado pelo CI) | ✅ |
-| Segurança HTTP (helmet, rate limit) | ❌ Ausente hoje | ✅ |
+| Segurança HTTP (helmet, rate limit) | ✅ helmet + rate limit geral e reforçado em auth | ✅ |
 | Módulo fiscal | 🟡 Focus NFe integrado (NFC-e/NFS-e), mas um único provedor, não abstração multi-município | ✅ Integração ativa |
 | App mobile | ✅ Android/iOS via Capacitor, mesma base | Varia |
 
-O item que mais pesa aqui é migrar o isolamento de tenant de convenção manual pra garantia estrutural — isso é questão de correção, não só de maturidade. Os testes ajudam a pegar regressão (e já pegaram — ver [Bugs corrigidos](#bugs-corrigidos)), mas não substituem esse trabalho estrutural. Depois entra `helmet` + rate limiting no backend.
+O que ainda mais pesa aqui é o módulo fiscal ser um provedor único (Focus NFe) em vez de uma abstração multi-município, e o CI não disparar o próprio deploy (Vercel/Railway seguem automáticos, mas independentes do pipeline). Ver [Changelog](./CHANGELOG.md) para o histórico completo de versões.
 
 ---
 
 ## Roadmap
 
-- [ ] Migrar isolamento de tenant de manual para estrutural (Prisma Client Extension ou Row-Level Security no Postgres) — **prioridade 1**
-- [x] Suíte de testes automatizados (121 testes, Jest + Supertest — ver [Testes automatizados](#-testes-automatizados))
+- [x] Migrar isolamento de tenant de manual para estrutural — Prisma Client Extension (`backend/src/config/database.js` + `tenantContext.js`)
+- [x] Suíte de testes automatizados (148 testes, Jest + Supertest — ver [Testes automatizados](#-testes-automatizados))
 - [x] CI (lint + build + test) via GitHub Actions (`.github/workflows/ci.yml`)
-- [ ] `helmet` + rate limiting no backend
-- [ ] Changelog e releases versionadas
+- [x] `helmet` + rate limiting no backend
+- [x] Changelog e releases versionadas (ver [CHANGELOG.md](./CHANGELOG.md))
+- [ ] CI disparando o deploy (hoje Vercel/Railway são automáticos, mas independentes do pipeline)
+- [ ] Decidir se vale abstrair o módulo fiscal pra múltiplos provedores/municípios ou manter só Focus NFe
 
 ---
 
@@ -393,7 +399,7 @@ Fica registrado porque foi feio: o `docker-compose.yml` subia MySQL enquanto o `
 6. **Migration faltante para o schema fiscal/invoice/reset de senha** — os campos novos em `tenants` (fiscal), `invoices` (`type`, `pdf_url`, `xml_url`, `focus_ref`, `error_message`) e `users` (`reset_token`, `reset_token_expiry`) tinham sido adicionados no `schema.prisma`, mas a migration correspondente nunca foi gerada. Como o `start.js` do Railway roda só `prisma migrate deploy` (aplica migrations existentes, não gera novas), o banco de produção ficou sem essas colunas até a migration ser criada e commitada.
 7. **`authorize('ADMIN', 'FINANCIAL')` removido sem querer nas rotas de nota fiscal** — no refactor pra Focus NFe, `invoice.routes.js` perdeu o middleware de permissão em `issue`/`cancel` (e nunca teve nas novas `from-sale`/`from-service`), permitindo que qualquer usuário autenticado do tenant emitisse ou cancelasse notas fiscais. Restaurado.
 8. **`npm run lint` do frontend nunca funcionou** — não existia `.eslintrc.cjs` (nem qualquer config) no repositório, então o comando falhava antes de analisar um único arquivo. Adicionada a config e corrigido o backlog de 44 problemas que ela revelou (catch vazios sem comentário, deps de hook faltando, imports mortos, aspas não escapadas em JSX).
-9. **Vazamento cross-tenant real em `product`/`vehicle`/`service`/`user` (`update`)** — o pior bug encontrado neste projeto. Cada um fazia um `updateMany` corretamente escopado por `tenantId` (então nunca escrevia em registro de outro tenant), mas em seguida buscava o registro pra devolver na resposta com `findUnique({ where: { id } })` **sem `tenantId`**. Se o `updateMany` não casasse nenhuma linha (ID de outro tenant), a resposta ainda vinha com os dados completos do registro alheio — preço de custo de produto, nome/telefone de cliente vinculado a uma OS, nome/e-mail de usuário. Corrigido checando `.count` do `updateMany` antes de buscar; testes de regressão em `tenant-isolation.test.js` pra cada um dos quatro.
+9. **Vazamento cross-tenant real em `product`/`vehicle`/`service`/`user` (`update`)** — o pior bug encontrado neste projeto. Cada um fazia um `updateMany` corretamente escopado por `tenantId` (então nunca escrevia em registro de outro tenant), mas em seguida buscava o registro pra devolver na resposta com `findUnique({ where: { id } })` **sem `tenantId`**. Se o `updateMany` não casasse nenhuma linha (ID de outro tenant), a resposta ainda vinha com os dados completos do registro alheio — preço de custo de produto, nome/telefone de cliente vinculado a uma OS, nome/e-mail de usuário. Corrigido checando `.count` do `updateMany` antes de buscar; testes de regressão em `tenant-isolation.test.js` pra cada um dos quatro. **Atualização**: esse padrão inteiro de bug — qualquer query que esqueça `tenantId` — foi fechado estruturalmente depois, ver [Multi-tenancy](#multi-tenancy) e o [Changelog](./CHANGELOG.md).
 10. **"Sucesso enganoso" espalhado por `remove`/`cancel`/`updateStatus`** — em `client`, `product`, `sale`, `service`, `user`, `vehicle` e `financial`, o padrão `updateMany`/`deleteMany` escopado por `tenantId` respondia 200 mesmo quando nenhuma linha era afetada (ID inexistente ou de outro tenant). Sem vazamento de dado — a escrita nunca acontecia — mas a API mentia sobre o resultado. Corrigido em todos os pontos encontrados, checando `.count`/`.length` antes de responder sucesso.
 11. **`stock.controller.js` retornava 500 em vez de 404** — `createMovement` lançava um `Error` puro (sem `statusCode`) ao tentar mexer em produto de outro tenant, caindo no handler genérico de erro. Corrigido pra usar `statusCode: 404`, como o resto do código já fazia.
 
