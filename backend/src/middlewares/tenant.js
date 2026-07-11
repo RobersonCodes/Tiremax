@@ -1,4 +1,5 @@
 const prisma = require('../config/database');
+const { runWithTenant } = require('../config/tenantContext');
 
 // Middleware que injeta tenantId em todas as requisições autenticadas
 const tenantMiddleware = async (req, res, next) => {
@@ -25,7 +26,7 @@ const tenantMiddleware = async (req, res, next) => {
 
     req.tenantId = user.tenant.id;
     req.tenant = user.tenant;
-    next();
+    runWithTenant(req.tenantId, next);
   } catch (err) {
     next(err);
   }
