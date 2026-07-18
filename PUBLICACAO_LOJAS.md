@@ -392,8 +392,10 @@ POLÍTICA DE PRIVACIDADE — TireMax ERP
    configurado pelo administrador do sistema.
 
 4. CONTATO
-   [seu email de contato]
+   roberson_sl@hotmail.com
 ```
+
+Já resolvido: URL final é `https://tiremax.vercel.app/politica-de-privacidade.html` (arquivo copiado para `frontend/public/`, falta apenas deploy). Ver `TEXTOS_LOJAS.md` para os campos já preenchidos.
 
 ---
 

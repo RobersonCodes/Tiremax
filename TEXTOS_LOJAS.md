@@ -54,7 +54,7 @@ Sistema com autenticação por login e senha, com controle de acesso por perfil 
 📱 MULTIPLATAFORMA
 Acesse pelo celular, tablet ou computador. O sistema funciona perfeitamente em qualquer dispositivo.
 
-Para mais informações: contato@seudominio.com.br
+Para mais informações: roberson_sl@hotmail.com
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -94,15 +94,14 @@ O backend está hospedado em servidor próprio.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 URL DE SUPORTE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-https://seudominio.com.br/suporte
-(ou use um email: mailto:suporte@seudominio.com.br)
+mailto:roberson_sl@hotmail.com
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 URL DE POLÍTICA DE PRIVACIDADE (obrigatório nas duas lojas)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-https://seudominio.com.br/privacidade
-(hospede o arquivo politica-de-privacidade.html nesta URL)
+https://tiremax.vercel.app/politica-de-privacidade.html
+(arquivo já copiado para frontend/public/ — falta commitar/dar deploy pra ir ao ar)
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
