@@ -38,7 +38,7 @@ Depois do primeiro deploy, testar o endereço `pages.dev` antes de associar dom�
 ## Pendências antes do corte de tráfego
 
 1. A origem foi identificada: projeto Railway `beautiful-wonder`, serviço `Tiremax` e serviço `Postgres`; ambos estão offline porque o período de teste expirou. A Vercel `VITE_API_URL` continua como Secret e não pode ser revelada.
-2. A tela Backups do Postgres mostra um backup existente chamado `Pre-Security-Patch Backup`, de 219 MB, criado há cerca de um mês, sem agenda de backups. A documentação do Railway informa que dados em volumes de Trial são apagados 30 dias após a expiração dos créditos. Prioridade: preservar a base já. A restauração do Railway cria um volume substituto no mesmo serviço, mantém o volume anterior desanexado e exige Deploy para aplicar; avaliar custo/limites da conta antes de aplicar.
+2. O backup `Pre-Security-Patch Backup` (219 MB, de 2026-08-22) foi restaurado em 2026-10-17. O Railway criou o volume `postgres-2026-08-22 17:03 UTC`; o volume original `postgres-volume` continua no projeto. A implantação para conectar o volume restaurado ao Postgres está bloqueada porque o Trial expirou e o Railway exige selecionar um plano. Nenhum plano ou pagamento foi aprovado. A contagem de clientes ainda não foi consultada.
 3. Transferir os registros do PostgreSQL para Neon só após confirmação específica do usuário sobre os dados e o destino; não importar dados nesta etapa. Confirmar também o tamanho atual da base, pois 219 MB é o tamanho do backup, não uma prova do tamanho da base atual.
 4. O suporte a logos no Cloudflare R2 já foi preparado localmente. A ativação do R2 mostra US$ 0,00 no momento, mas exige uma assinatura com cobrança por excedentes e renovação automática. Não ativar sem um limite de gastos aprovado. Em produção, o app bloqueia o upload de logos se o armazenamento persistente não estiver configurado.
 5. O projeto Neon `Tiremax` foi criado no plano Free, na região AWS South America East 1 (São Paulo); está vazio e nenhum dado foi importado. O Render já tem um serviço `safeher` que não é o Tiremax; nenhum recurso Tiremax foi criado.
@@ -49,7 +49,7 @@ Depois do primeiro deploy, testar o endereço `pages.dev` antes de associar dom�
 
 - Projeto `beautiful-wonder` (ID `7f5d508e-f58f-47b1-8c55-a7dcaeb8ff35`).
 - Serviço `Tiremax` conectado a `RobersonCodes/Tiremax`, diretório `backend`, branch `main`; domínio público atual `tiremax-production.up.railway.app` na porta 8080.
-- Serviço `Postgres` offline, com volume persistente anexado.
+- Serviço `Postgres` offline por expiração do Trial; o volume original `postgres-volume` e o novo volume restaurado estão visíveis no projeto. A conta exige selecionar um plano para voltar a implantar.
 - O schema identifica a tabela de clientes como `clients`, mas nenhum total pôde ser consultado enquanto o Postgres está offline.
 - Quando o banco estiver acessível, o total por empresa pode ser obtido sem ler dados pessoais com: `SELECT t.name, COUNT(c.id) AS clientes FROM tenants t LEFT JOIN clients c ON c.tenant_id = t.id GROUP BY t.id, t.name;`.
 - Há duas alterações de variáveis de e-mail preparadas na interface do Railway (`EMAIL_FROM` e uma chave de API). Elas não foram aplicadas nem implantadas.
