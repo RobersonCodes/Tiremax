@@ -1,33 +1,26 @@
 const { execSync } = require('child_process');
+require('dotenv').config();
 
-process.env.JWT_SECRET = process.env.JWT_SECRET || 'tiremax-secret-2024';
 process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-process.env.PORT = process.env.PORT || '3001';
-process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+
+const requiredEnv = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnv = requiredEnv.filter(name => !process.env[name]);
+if (missingEnv.length) {
+  throw new Error(`Variáveis obrigatórias ausentes: ${missingEnv.join(', ')}`);
+}
+// Hosts antigos podem usar a mesma URL para consultas e migrations.
+process.env.DIRECT_URL = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
+if (process.env.JWT_SECRET === 'tiremax-secret-2024') {
+  throw new Error('JWT_SECRET usa uma chave pública e insegura; gere uma chave forte antes de iniciar.');
+}
 
 console.log('[TireMax] Iniciando servidor...');
 console.log('[TireMax] NODE_ENV:', process.env.NODE_ENV);
-console.log('[TireMax] PORT:', process.env.PORT);
 console.log('[TireMax] DATABASE_URL presente:', !!process.env.DATABASE_URL);
 
-try {
-  console.log('[TireMax] Gerando Prisma Client...');
-  execSync('npx prisma generate', { stdio: 'inherit' });
-  console.log('[TireMax] Prisma Client gerado!');
-} catch (e) {
-  console.error('[TireMax] Falha ao gerar Prisma Client:', e.message);
-}
-
-if (process.env.DATABASE_URL) {
-  try {
-    console.log('[TireMax] Rodando migrations...');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    console.log('[TireMax] Migrations concluidas!');
-  } catch (e) {
-    console.error('[TireMax] Falha nas migrations:', e.message);
-  }
-} else {
-  console.warn('[TireMax] DATABASE_URL nao definida!');
-}
+console.log('[TireMax] Aplicando migrations...');
+execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+console.log('[TireMax] Migrations concluídas!');
 
 require('./src/server.js');

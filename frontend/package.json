@@ -7,28 +7,21 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-
     "cap:add:android": "npx cap add android",
     "cap:add:ios": "npx cap add ios",
     "cap:add:all": "npx cap add android && npx cap add ios",
-
     "cap:sync": "npm run build && npx cap sync",
     "cap:sync:android": "npm run build && npx cap sync android",
     "cap:sync:ios": "npm run build && npx cap sync ios",
-
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios",
-
     "cap:run:android": "npm run build && npx cap sync android && npx cap run android",
     "cap:run:ios": "npm run build && npx cap sync ios && npx cap run ios",
-
     "cap:build:apk": "npm run build && npx cap sync android && node scripts/build-apk.js",
     "cap:build:release": "npm run build && npx cap sync",
-
     "cap:copy": "npx cap copy",
     "cap:copy:android": "npx cap copy android",
     "cap:copy:ios": "npx cap copy ios",
-
     "cap:doctor": "npx cap doctor"
   },
   "dependencies": {
@@ -57,7 +50,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.0",
     "react-hot-toast": "^2.4.1",
-    "react-router-dom": "^6.22.2",
+    "react-router-dom": "^7.18.4",
     "recharts": "^2.12.2"
   },
   "devDependencies": {

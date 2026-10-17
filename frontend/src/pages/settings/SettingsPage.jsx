@@ -7,6 +7,7 @@ import { PageHeader, Card, Button, Input, FormGroup } from '../../components/ui/
 import toast from 'react-hot-toast'
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const resolveAssetUrl = (url) => url?.startsWith('http') ? url : `${apiBase}${url || ''}`
 
 const SWATCHES = ['#f5c800', '#e8230a', '#3b64ff', '#10b981', '#8b5cf6', '#f97316']
 
@@ -15,7 +16,7 @@ export default function SettingsPage() {
   const { user } = useAuth()
   const [form, setForm] = useState({ ...settings })
   const [saving, setSaving] = useState(false)
-  const [logoPreview, setLogoPreview] = useState(settings.logo ? `${apiBase}${settings.logo}` : null)
+  const [logoPreview, setLogoPreview] = useState(settings.logo ? resolveAssetUrl(settings.logo) : null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const logoRef = useRef()
 
@@ -44,7 +45,7 @@ export default function SettingsPage() {
     setUploadingLogo(true)
     try {
       const url = await uploadLogo(file)
-      setLogoPreview(`${apiBase}${url}`)
+      setLogoPreview(resolveAssetUrl(url))
       toast.success('Logo atualizado!')
     } catch {
       toast.error('Erro ao enviar logo')

@@ -5,6 +5,8 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useSettings } from '../../contexts/SettingsContext'
 
 const EASE = [0.16, 1, 0.3, 1]
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const resolveAssetUrl = (url) => url?.startsWith('http') ? url : `${apiBase}${url || ''}`
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard', exact: true },
@@ -50,7 +52,6 @@ function SidebarContent({ onClose }) {
   const { user } = useAuth()
   const { settings } = useSettings()
   const whatsappNum = settings?.whatsapp || '5511999999999'
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
   const brandColor = settings?.primaryColor || '#f0b400'
 
   return (
@@ -61,7 +62,7 @@ function SidebarContent({ onClose }) {
           style={{ background: brandColor, boxShadow: `0 0 20px ${brandColor}33` }}
         >
           {settings?.logo
-            ? <img src={`${apiBase}${settings.logo}`} alt="Logo" className="w-full h-full object-contain" />
+            ? <img src={resolveAssetUrl(settings.logo)} alt="Logo" className="w-full h-full object-contain" />
             : <span>🛞</span>}
         </div>
         <div className="min-w-0">

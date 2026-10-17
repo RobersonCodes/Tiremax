@@ -5,6 +5,7 @@ const { assertTestDatabase } = require('./helpers/testDb');
 
 module.exports = async function globalSetup() {
   dotenv.config({ path: path.join(__dirname, '..', '.env.test') });
+  process.env.DIRECT_URL = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
   const dbName = assertTestDatabase(process.env.DATABASE_URL);
   console.log(`[tests] aplicando migrations em "${dbName}"...`);

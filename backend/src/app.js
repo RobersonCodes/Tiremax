@@ -9,37 +9,39 @@ const { apiLimiter } = require('./middlewares/rateLimit')
 
 const app = express()
 
-// Railway roda atrás de um proxy reverso — sem isso, req.ip (e o rate
-// limiter, que usa req.ip) veria o IP do proxy pra todo mundo igual.
+// O host roda atrás de um proxy reverso — sem isso, req.ip (e o rate limiter,
+// que usa req.ip) veria o IP do proxy pra todo mundo igual.
 app.set('trust proxy', 1)
 
-const allowedOrigins = [
-  'https://tiremax.vercel.app',
+const allowedOrigins = new Set([
+  process.env.FRONTEND_URL,
+  ...(process.env.CORS_ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()),
   'http://localhost:5173',
-  'http://localhost:3000'
-]
+  'http://localhost:3000',
+].filter(Boolean))
 
 app.use(helmet({
-  // Frontend (Vercel) e backend (Railway) são origens diferentes de propósito
-  // — CORP same-origin (padrão do helmet) bloquearia o navegador de exibir
-  // logo/imagens servidas em /uploads a partir do frontend.
+  // Frontend e API usam origens diferentes; imagens da API precisam continuar
+  // acessíveis pela interface.
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }))
 
-app.use(cors({
+const corsOptions = {
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.has(origin)) {
       callback(null, true)
     } else {
-      callback(null, true) // permite tudo por ora, mudar para false em produção final
+      callback(new Error('Origem não autorizada pelo CORS'))
     }
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
-}))
+}
 
-app.options('*', cors())
+app.use(cors(corsOptions))
+
+app.options('*', cors(corsOptions))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
