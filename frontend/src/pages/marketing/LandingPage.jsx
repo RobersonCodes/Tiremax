@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import { useRef, useState } from 'react'
 import {
   ArrowRight, Users, ShoppingCart, Wrench, Package, DollarSign,
-  BarChart3, Check, Shield, Smartphone, Star, ChevronDown,
+  BarChart3, Check, Shield, Smartphone, ChevronDown,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { CustomCursor } from '../../components/marketing/CustomCursor'
@@ -53,37 +53,15 @@ const FEATURES = [
 
 const TRUST_POINTS = [
   { icon: Check, text: '30 dias grátis, sem cartão de crédito' },
-  { icon: Shield, text: 'Dados no seu próprio servidor' },
+  { icon: Shield, text: 'Controle de acesso por perfil de usuário' },
   { icon: Smartphone, text: 'Funciona em celular, tablet e computador' },
 ]
 
-// ⚠️ PLACEHOLDER — troque pelos depoimentos reais dos seus primeiros clientes
-// assim que tiver. Nunca publique depoimento que não seja de um cliente real.
-const TESTIMONIALS = [
-  {
-    name: '[Nome do dono]',
-    business: '[Nome da borracharia] · [Cidade/UF]',
-    quote: '[Espaço para o depoimento real de um cliente — o que mudou no dia a dia dele depois do TireMax.]',
-  },
-  {
-    name: '[Nome do dono]',
-    business: '[Nome da borracharia] · [Cidade/UF]',
-    quote: '[Depoimento real. Peça pro cliente falar em número: tempo economizado, vendas a mais, estoque que não faltou mais.]',
-  },
-  {
-    name: '[Nome do dono]',
-    business: '[Nome da borracharia] · [Cidade/UF]',
-    quote: '[Depoimento real de outro cliente, de preferência de uma cidade diferente do primeiro.]',
-  },
-]
-
-// ⚠️ PLACEHOLDER — os valores e limites abaixo são exemplo. Defina os reais
-// antes de publicar (também usados em SuperAdminPage.jsx: TRIAL/STARTER/PRO/ENTERPRISE).
 const PRICING = [
   {
     plan: 'STARTER',
     label: 'Starter',
-    price: 'R$ 00',
+    price: 'R$ 69,90',
     period: '/mês',
     description: 'Pra quem está começando a organizar a borracharia.',
     features: ['Até 1 usuário', 'Clientes e veículos ilimitados', 'PDV e ordens de serviço', 'Estoque com alerta de baixo estoque'],
@@ -93,7 +71,7 @@ const PRICING = [
   {
     plan: 'PRO',
     label: 'Pro',
-    price: 'R$ 00',
+    price: 'R$ 119,90',
     period: '/mês',
     description: 'Pra quem já tem equipe e quer controle financeiro completo.',
     features: ['Até 5 usuários', 'Tudo do Starter', 'Financeiro completo (contas a pagar/receber)', 'Relatórios e dashboard em tempo real', 'Suporte prioritário'],
@@ -119,11 +97,11 @@ const FAQS = [
   },
   {
     q: 'Meus dados ficam seguros? E se eu quiser sair?',
-    a: 'Sim. Seus dados ficam no seu próprio servidor, isolados de outras empresas. Se decidir cancelar, você pode exportar tudo antes de sair — sem multa e sem letra miúda.',
+    a: 'O TireMax usa login e permissões por perfil para controlar o acesso às funções do sistema. Consulte a Política de Privacidade para conhecer como os dados são tratados e armazenados.',
   },
   {
     q: 'E se eu não gostar depois dos 30 dias grátis?',
-    a: 'Você cancela quando quiser, direto no sistema, sem precisar ligar ou negociar com ninguém. Não pedimos cartão de crédito para começar o trial.',
+    a: 'O teste dura 30 dias e não exige cartão de crédito. Antes de contratar um plano pago, consulte as condições de cobrança e cancelamento.',
   },
   {
     q: 'Meu funcionário pode estragar alguma coisa no sistema?',
@@ -238,56 +216,6 @@ function Hero() {
   )
 }
 
-function Testimonials() {
-  return (
-    <section className="border-t border-white/[0.06] py-20 sm:py-24">
-      <div className="mx-auto max-w-6xl px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto max-w-2xl text-center"
-        >
-          <h2 className="font-display text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">
-            Quem usa, não volta pro caderno
-          </h2>
-          <p className="mt-3 text-white/55">
-            Donos de borracharia real, usando o TireMax no dia a dia.
-          </p>
-        </motion.div>
-
-        <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-3">
-          {TESTIMONIALS.map((t, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.5, delay: i * 0.09, ease: EASE }}
-              className="card p-6"
-            >
-              <div className="flex gap-0.5 text-yellow-400 mb-3">
-                {[...Array(5)].map((_, s) => <Star key={s} size={14} fill="currentColor" />)}
-              </div>
-              <p className="text-sm leading-relaxed text-white/70">&quot;{t.quote}&quot;</p>
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-400/10 font-display font-bold text-yellow-400">
-                  {t.name.charAt(1)?.toUpperCase() || '?'}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{t.name}</p>
-                  <p className="text-xs text-white/40">{t.business}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function Pricing() {
   return (
     <section className="border-t border-white/[0.06] py-20 sm:py-24">
@@ -300,10 +228,10 @@ function Pricing() {
           className="mx-auto max-w-2xl text-center"
         >
           <h2 className="font-display text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">
-            Menos que o custo de um pneu por mês
+            Planos para cada tamanho de oficina
           </h2>
           <p className="mt-3 text-white/55">
-            Sem letra miúda. Cancele quando quiser, direto no sistema.
+            Comece com 30 dias grátis e escolha o plano ideal para sua oficina.
           </p>
         </motion.div>
 
@@ -508,7 +436,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <Testimonials />
       <Pricing />
       <FAQ />
 
