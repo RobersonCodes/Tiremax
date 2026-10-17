@@ -40,11 +40,12 @@ Depois do primeiro deploy, testar o endereço `pages.dev` antes de associar dom�
 1. A origem foi identificada: projeto Railway `beautiful-wonder`, serviço `Tiremax` e serviço `Postgres`; ambos estão offline porque o período de teste expirou. A Vercel `VITE_API_URL` continua como Secret e não pode ser revelada.
 2. A tela Backups do Postgres mostra um backup existente chamado `Pre-Security-Patch Backup`, de 219 MB, criado há cerca de um mês, sem agenda de backups. A documentação do Railway informa que dados em volumes de Trial são apagados 30 dias após a expiração dos créditos. Prioridade: preservar a base já. A restauração do Railway cria um volume substituto no mesmo serviço, mantém o volume anterior desanexado e exige Deploy para aplicar; avaliar custo/limites da conta antes de aplicar.
 3. Transferir os registros do PostgreSQL para Neon só após confirmação específica do usuário sobre os dados e o destino; não importar dados nesta etapa. Confirmar também o tamanho atual da base, pois 219 MB é o tamanho do backup, não uma prova do tamanho da base atual.
-4. O suporte a logos no Cloudflare R2 já foi preparado localmente. Ainda é necessário criar o bucket, emitir uma chave restrita a esse bucket e configurar `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` e `R2_PUBLIC_URL` no Render. Em produção, o app bloqueia o upload se o armazenamento persistente não estiver configurado.
-5. Conectar Cloudflare, Render e Neon, configurar as variáveis secretas e validar health check, login, dados, e-mail e uploads. Os dashboards Cloudflare, Render e Neon pediram login durante a preparação.
-6. Só então configurar os registros DNS na Hostinger e trocar o domínio. Manter a hospedagem atual sem alterações até a validação final.
+4. O suporte a logos no Cloudflare R2 já foi preparado localmente. A ativação do R2 mostra US$ 0,00 no momento, mas exige uma assinatura com cobrança por excedentes e renovação automática. Não ativar sem um limite de gastos aprovado. Em produção, o app bloqueia o upload de logos se o armazenamento persistente não estiver configurado.
+5. O projeto Neon `Tiremax` foi criado no plano Free, na região AWS South America East 1 (São Paulo); está vazio e nenhum dado foi importado. O Render já tem um serviço `safeher` que não é o Tiremax; nenhum recurso Tiremax foi criado.
+6. Publicar a branch local e criar o Blueprint no Render quando o conector GitHub permitir escrita no repositório. A conta GitHub está autenticada, mas a API do conector ainda devolve `403 Resource not accessible by integration` para criação de blobs. O usuário autorizou acesso de escrita somente ao repositório `RobersonCodes/Tiremax`; a reautorização/escopo do conector ainda precisa ser concluída.
+7. Só então configurar os registros DNS na Hostinger e trocar o domínio. Manter a hospedagem atual sem alterações até a validação final.
 
-## Estado observado no Railway
+## Estado observado nos provedores
 
 - Projeto `beautiful-wonder` (ID `7f5d508e-f58f-47b1-8c55-a7dcaeb8ff35`).
 - Serviço `Tiremax` conectado a `RobersonCodes/Tiremax`, diretório `backend`, branch `main`; domínio público atual `tiremax-production.up.railway.app` na porta 8080.
@@ -52,8 +53,10 @@ Depois do primeiro deploy, testar o endereço `pages.dev` antes de associar dom�
 - O schema identifica a tabela de clientes como `clients`, mas nenhum total pôde ser consultado enquanto o Postgres está offline.
 - Quando o banco estiver acessível, o total por empresa pode ser obtido sem ler dados pessoais com: `SELECT t.name, COUNT(c.id) AS clientes FROM tenants t LEFT JOIN clients c ON c.tenant_id = t.id GROUP BY t.id, t.name;`.
 - Há duas alterações de variáveis de e-mail preparadas na interface do Railway (`EMAIL_FROM` e uma chave de API). Elas não foram aplicadas nem implantadas.
-- A preparação está no commit local `073a448` da branch `codex/free-hosting-deploy`; ainda não foi enviada ao GitHub. O conector de GitHub recusou a criação da branch por falta de permissão de escrita, e o Git local não tem uma sessão autenticada para publicar.
-- Nenhuma configuração externa foi alterada durante esta preparação.
+- A preparação está na branch local `codex/free-hosting-deploy`; ainda não foi enviada ao GitHub. A conta do navegador está autenticada, mas o conector GitHub não consegue gravar no repositório.
+- O projeto vazio `Tiremax` foi criado no Neon Free em São Paulo. Nenhum dado de cliente ou outro dado do Railway foi transferido.
+- O Render tem um serviço existente chamado `safeher`, separado do Tiremax. Nenhum serviço Tiremax foi criado.
+- O R2 não foi ativado: a tela de contratação mostra US$ 0,00 no momento, com cobrança por excedentes e renovação automática.
 
 ## Arquivos preparados
 
